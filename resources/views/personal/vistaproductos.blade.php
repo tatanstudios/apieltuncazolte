@@ -108,7 +108,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                     </div>
-                                    <input type="text" name="precio[]" class="form-control"
+                                    <input type="number" name="precio[]" class="form-control"
                                            placeholder="¿Cuál es el precio?" autocomplete="off" required>
                                 </div>
                             </div>
