@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Backend\Admin\Horario;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contenedor;
 use App\Models\Horario;
 use App\Models\InformacionAdmin;
 use App\Models\IntentosCorreo;
 use App\Models\TipoServicio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -270,9 +272,6 @@ class HorarioController extends Controller
             return ['success' => 2];
         }
     }
-
-
-
 
 
 

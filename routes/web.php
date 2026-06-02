@@ -12,6 +12,7 @@ use App\Http\Controllers\Backend\Admin\Eventos\EventosController;
 use App\Http\Controllers\Backend\Admin\Horario\HorarioController;
 use App\Http\Controllers\Backend\Admin\Ordenes\OrdenesController;
 use App\Http\Controllers\Backend\Admin\Motorista\MotoristaController;
+use App\Http\Controllers\PersonalController;
 
 
 
@@ -206,3 +207,8 @@ Route::post('/admin/cerrado/app/actualizar', [HorarioController::class, 'actuali
 
 
 
+
+// VISTAS PERSONALES - APRENDER PRECIOS
+Route::get('/admin/personales/mitienda/index', [PersonalController::class, 'vistaPersonal']);
+Route::post('/admin/personales/mitienda/productos', [PersonalController::class, 'mostrarProductos']);
+Route::post('/admin/personales/mitienda/verificar', [PersonalController::class, 'verificarPrecios']);
