@@ -14,9 +14,7 @@
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-    html, body {
-        height: 100%;
-    }
+    html, body { height: 100%; }
     body {
         font-family: 'Roboto', sans-serif;
         background-image: linear-gradient(to top, #0f2027 0%, #203a43 50%, #2c5364 100%);
@@ -35,29 +33,13 @@
         letter-spacing: 1px;
         text-transform: uppercase;
     }
-    ::placeholder {
-        font-size: 14px;
-        letter-spacing: 0.5px;
-    }
-    .image-size-small {
-        width: 140px;
-        margin: 0 auto;
-    }
-    .image-size-small img {
-        width: 140px;
-        margin-bottom: -70px;
-    }
+    ::placeholder { font-size: 14px; letter-spacing: 0.5px; }
     .producto-card {
         background: #f8f9fa;
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 15px;
         border-left: 4px solid #673AB7;
-    }
-    .producto-info {
-        font-size: 13px;
-        color: #555;
-        margin-bottom: 3px;
     }
     .producto-nombre {
         font-size: 15px;
@@ -78,15 +60,20 @@
         font-size: 13px;
         float: right;
     }
+    .producto-imagen {
+        width: 100%;
+        max-height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
 </style>
 
 <body>
-
 <div class="demo-container">
     <div class="container">
         <div class="row">
             <div class="col-lg-7 col-12 mx-auto">
-
                 <div class="p-5 bg-white rounded shadow-lg">
                     <h3 class="mb-2 text-center pt-5">INGRESA LOS PRECIOS</h3>
                     <p class="text-center lead">{{ count($productos) }} productos seleccionados</p>
@@ -97,10 +84,15 @@
                         @foreach ($productos as $index => $producto)
                             <div class="producto-card">
                                 <div class="numero-producto">{{ $index + 1 }}</div>
-                                <div class="producto-info"><strong>Código:</strong> {{ $producto->alternativo }}</div>
+
+                                {{-- Imagen si existe --}}
+                                @if($producto->imagen)
+                                    <img style="width: 150px; height: 150px; object-fit:cover; border-radius:8px; display:block; margin:0 auto 12px;" src="{{ asset('storage/imagenes2/' . $producto->imagen) }}"
+                                         alt="{{ $producto->nombre }}"
+                                         class="producto-imagen">
+                                @endif
+
                                 <div class="producto-nombre">{{ $producto->nombre }}</div>
-                                <div class="producto-info"><strong>Marca:</strong> {{ $producto->marca }}</div>
-                                <div class="producto-info"><strong>Unidad:</strong> {{ $producto->unidad }}</div>
 
                                 <input type="hidden" name="producto_id[]" value="{{ $producto->id }}">
 
@@ -108,7 +100,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                     </div>
-                                    <input type="number" name="precio[]" class="form-control"
+                                    <input type="number" step="0.01" name="precio[]" class="form-control"
                                            placeholder="¿Cuál es el precio?" autocomplete="off" required>
                                 </div>
                             </div>
@@ -137,12 +129,7 @@
 <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/sweetalert2.all.min.js') }}" type="text/javascript"></script>
 
-</body>
-</html>
-
 <script>
-
-    // Formatear precio a 2 decimales al salir del campo
     document.querySelectorAll('input[name="precio[]"]').forEach(function(input) {
         input.addEventListener('blur', function() {
             var valor = this.value.trim();
@@ -157,17 +144,11 @@
         var todosLlenos = true;
 
         precios.forEach(function(input) {
-            if (input.value.trim() === '') {
-                todosLlenos = false;
-            }
+            if (input.value.trim() === '') todosLlenos = false;
         });
 
-        if (!todosLlenos) {
-            toastr.error("Todos los precios son requeridos");
-            return;
-        }
+        if (!todosLlenos) { toastr.error("Todos los precios son requeridos"); return; }
 
-        // Formatear todos antes de enviar por si no salieron del campo
         precios.forEach(function(input) {
             var valor = input.value.trim();
             if (valor !== '' && !isNaN(valor)) {
@@ -177,5 +158,6 @@
 
         document.getElementById('formVerificar').submit();
     }
-
 </script>
+</body>
+</html>

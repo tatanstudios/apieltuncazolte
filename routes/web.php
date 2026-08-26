@@ -209,6 +209,11 @@ Route::post('/admin/cerrado/app/actualizar', [HorarioController::class, 'actuali
 
 
 // VISTAS PERSONALES - APRENDER PRECIOS
+Route::get('/admin/personales/mitienda/indexaddproductos', [PersonalController::class, 'vistaPersonalAgregarProductos']);
+Route::post('/admin/personales/mitienda/nuevoproducto', [PersonalController::class, 'nuevoProductoPersonal']);
+
+
+
 Route::get('/admin/personales/mitienda/index', [PersonalController::class, 'vistaPersonal']);
 Route::post('/admin/personales/mitienda/productos', [PersonalController::class, 'mostrarProductos']);
 Route::post('/admin/personales/mitienda/verificar', [PersonalController::class, 'verificarPrecios']);

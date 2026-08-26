@@ -14,9 +14,7 @@
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-    html, body {
-        height: 100%;
-    }
+    html, body { height: 100%; }
     body {
         font-family: 'Roboto', sans-serif;
         background-image: linear-gradient(to top, #0f2027 0%, #203a43 50%, #2c5364 100%);
@@ -34,31 +32,15 @@
         letter-spacing: 1px;
         text-transform: uppercase;
     }
-    ::placeholder {
-        font-size: 14px;
-        letter-spacing: 0.5px;
-    }
-    .form-control-lg {
-        font-size: 16px;
-        padding: 25px 20px;
-    }
-    .image-size-small {
-        width: 140px;
-        margin: 0 auto;
-    }
-    .image-size-small img {
-        width: 140px;
-        margin-bottom: -70px;
-    }
+    ::placeholder { font-size: 14px; letter-spacing: 0.5px; }
+    .form-control-lg { font-size: 16px; padding: 25px 20px; }
 </style>
 
 <body>
-
 <div class="demo-container">
     <div class="container">
         <div class="row" style="margin-top: 60px">
             <div class="col-lg-6 col-12 mx-auto">
-
                 <div class="p-5 bg-white rounded shadow-lg">
                     <h3 class="mb-2 text-center pt-5">APRENDER PRECIOS</h3>
                     <p class="text-center lead">Cafe, Helados Y Pupusería El Tuncazo</p>
@@ -74,7 +56,8 @@
                                 <span class="input-group-text"><i class="fas fa-boxes"></i></span>
                             </div>
                             <input type="number" name="cantidad" id="cantidad" class="form-control"
-                                   placeholder="¿Cuántos productos quieres practicar?" min="1" max="{{ $totalProductos }}"
+                                   placeholder="¿Cuántos productos quieres practicar?"
+                                   min="1" max="{{ $totalProductos }}"
                                    autocomplete="off" required>
                         </div>
 
@@ -94,13 +77,8 @@
 <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/sweetalert2.all.min.js') }}" type="text/javascript"></script>
 
-</body>
-</html>
-
 <script>
-
     var inputCantidad = document.getElementById("cantidad");
-
     inputCantidad.addEventListener("keyup", function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -112,22 +90,12 @@
         var cantidad = document.getElementById('cantidad').value;
         var total = {{ $totalProductos }};
 
-        if (cantidad === '') {
-            toastr.error("Ingrese una cantidad");
-            return;
-        }
-
-        if (parseInt(cantidad) <= 0) {
-            toastr.error("La cantidad debe ser mayor a 0");
-            return;
-        }
-
-        if (parseInt(cantidad) > total) {
-            toastr.error("Solo hay " + total + " productos disponibles");
-            return;
-        }
+        if (cantidad === '') { toastr.error("Ingrese una cantidad"); return; }
+        if (parseInt(cantidad) <= 0) { toastr.error("La cantidad debe ser mayor a 0"); return; }
+        if (parseInt(cantidad) > total) { toastr.error("Solo hay " + total + " productos disponibles"); return; }
 
         document.getElementById('formCantidad').submit();
     }
-
 </script>
+</body>
+</html>
