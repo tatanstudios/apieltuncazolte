@@ -51,7 +51,21 @@
 
                     <form action="/admin/personales/mitienda/productos" method="POST" id="formCantidad">
                         @csrf
+
+                        {{-- SELECT BLOQUE --}}
                         <div class="input-group form-group" style="margin-top: 25px">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-layer-group"></i></span>
+                            </div>
+                            <select name="bloque" id="bloque" class="form-control" onchange="actualizarTotal()">
+                                <option value="todos">Todos los bloques</option>
+                                <option value="1">Bloque 1</option>
+                                <option value="2">Bloque 2</option>
+                            </select>
+                        </div>
+
+                        {{-- INPUT CANTIDAD --}}
+                        <div class="input-group form-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-boxes"></i></span>
                             </div>
@@ -61,7 +75,10 @@
                                    autocomplete="off" required>
                         </div>
 
-                        <br>
+                        <small class="text-muted d-block text-center mb-3" id="textoDisponibles">
+                            Disponibles en selección: <strong id="numDisponibles">{{ $totalProductos }}</strong>
+                        </small>
+
                         <div class="form-group text-center">
                             <input type="button" value="COMENZAR" onclick="iniciar()" id="btnIniciar"
                                    class="btn btn-lg w-100 shadow-lg" style="background: #673AB7; color: white">
@@ -78,6 +95,13 @@
 <script src="{{ asset('js/sweetalert2.all.min.js') }}" type="text/javascript"></script>
 
 <script>
+    // Totales por bloque desde el servidor
+    var totalesPorBloque = {
+        'todos': {{ $totalProductos }},
+        '1':     {{ $totalBloque1 }},
+        '2':     {{ $totalBloque2 }},
+    };
+
     var inputCantidad = document.getElementById("cantidad");
     inputCantidad.addEventListener("keyup", function(event) {
         if (event.key === 'Enter') {
@@ -86,13 +110,26 @@
         }
     });
 
-    function iniciar() {
-        var cantidad = document.getElementById('cantidad').value;
-        var total = {{ $totalProductos }};
+    function actualizarTotal() {
+        var bloque = document.getElementById('bloque').value;
+        var disponibles = totalesPorBloque[bloque] || 0;
 
-        if (cantidad === '') { toastr.error("Ingrese una cantidad"); return; }
-        if (parseInt(cantidad) <= 0) { toastr.error("La cantidad debe ser mayor a 0"); return; }
-        if (parseInt(cantidad) > total) { toastr.error("Solo hay " + total + " productos disponibles"); return; }
+        document.getElementById('numDisponibles').textContent = disponibles;
+        document.getElementById('cantidad').max = disponibles;
+        document.getElementById('cantidad').value = '';
+    }
+
+    function iniciar() {
+        var bloque     = document.getElementById('bloque').value;
+        var cantidad   = document.getElementById('cantidad').value;
+        var disponibles = totalesPorBloque[bloque] || 0;
+
+        if (cantidad === '')              { toastr.error("Ingrese una cantidad"); return; }
+        if (parseInt(cantidad) <= 0)      { toastr.error("La cantidad debe ser mayor a 0"); return; }
+        if (parseInt(cantidad) > disponibles) {
+            toastr.error("Solo hay " + disponibles + " productos en esta selección");
+            return;
+        }
 
         document.getElementById('formCantidad').submit();
     }

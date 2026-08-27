@@ -14,7 +14,8 @@ class PersonalProductos extends Model
     protected $fillable = [
         'nombre',
         'precio',
-        'imagen'
+        'imagen',
+        'bloque'
     ];
 
 }

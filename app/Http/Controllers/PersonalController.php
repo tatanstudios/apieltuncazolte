@@ -42,6 +42,7 @@ class PersonalController extends Controller
             'nombre' => $request->nombre,
             'precio' => $request->precio,
             'imagen' => $nombreFoto,
+            'bloque' => 3
         ]);
 
         return ['success' => 1];
@@ -51,21 +52,28 @@ class PersonalController extends Controller
     public function vistaPersonal()
     {
         $totalProductos = PersonalProductos::count();
-        return view('personal.vistapersonal', compact('totalProductos'));
+        $totalBloque1   = PersonalProductos::where('bloque', 1)->count();
+        $totalBloque2   = PersonalProductos::where('bloque', 2)->count();
+
+        return view('personal.vistapersonal', compact('totalProductos', 'totalBloque1', 'totalBloque2'));
     }
 
     public function mostrarProductos(Request $request)
     {
         $cantidad = (int)$request->input('cantidad');
+        $bloque   = $request->input('bloque'); // 'todos', '1', '2'
 
         if ($cantidad <= 0) {
             return redirect('/admin/personales/mitienda/index');
         }
 
-        $productos = PersonalProductos::select('id', 'nombre', 'precio', 'imagen')
-            ->inRandomOrder()
-            ->limit($cantidad)
-            ->get();
+        $query = PersonalProductos::select('id', 'nombre', 'precio', 'imagen');
+
+        if ($bloque !== 'todos') {
+            $query->where('bloque', (int)$bloque);
+        }
+
+        $productos = $query->inRandomOrder()->limit($cantidad)->get();
 
         return view('personal.vistaproductos', compact('productos'));
     }

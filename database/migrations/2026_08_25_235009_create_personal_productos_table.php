@@ -18,6 +18,7 @@ class CreatePersonalProductosTable extends Migration
             $table->string('nombre', 300);
             $table->decimal('precio', 10,2);
             $table->string('imagen', 100)->nullable();
+            $table->integer('bloque');
         });
     }
 
