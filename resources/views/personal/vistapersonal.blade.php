@@ -61,6 +61,7 @@
                                 <option value="todos">Todos los bloques</option>
                                 <option value="1">Bloque 1</option>
                                 <option value="2">Bloque 2</option>
+                                <option value="3">Bloque 3</option>
                             </select>
                         </div>
 
@@ -100,6 +101,7 @@
         'todos': {{ $totalProductos }},
         '1':     {{ $totalBloque1 }},
         '2':     {{ $totalBloque2 }},
+        '3':     {{ $totalBloque3 }},
     };
 
     var inputCantidad = document.getElementById("cantidad");
