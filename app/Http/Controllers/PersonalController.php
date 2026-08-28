@@ -54,8 +54,13 @@ class PersonalController extends Controller
         $totalProductos = PersonalProductos::count();
         $totalBloque1   = PersonalProductos::where('bloque', 1)->count();
         $totalBloque2   = PersonalProductos::where('bloque', 2)->count();
+        $totalBloque3   = PersonalProductos::where('bloque', 3)->count();
 
-        return view('personal.vistapersonal', compact('totalProductos', 'totalBloque1', 'totalBloque2'));
+        return view('personal.vistapersonal', compact('totalProductos',
+            'totalBloque1',
+                      'totalBloque2',
+                      'totalBloque3',
+        ));
     }
 
     public function mostrarProductos(Request $request)
