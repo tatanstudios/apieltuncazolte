@@ -1,50 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>El Tuncazo | Panel</title>
+{{-- Armazón del panel: barra superior, menú lateral (config/adminlte.php) y un iframe donde se cargan las pantallas --}}
+@extends('adminlte::page')
 
-
+@section('adminlte_css_pre')
     <link href="{{ asset('images/icono-sistema.png') }}" rel="icon">
-    <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <!-- Font Awesome Icons -->
-    <link href="{{ asset('fontawesome-free/css/all.min.css') }}" type="text/css" rel="stylesheet" />
-    <!-- Theme style -->
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
-    <!-- Mensajes Toast -->
-    <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
-    @yield('content-admin-css')
-</head>
+@stop
 
-<!-- para iniciar con el menu cerrado colocar
- <body class="sidebar-mini sidebar-closed sidebar-collapse" style="height: auto;">
- -->
+@section('css')
+    <style>
+        .content-wrapper { background-color: #fff; }
+        .content-wrapper > .content { padding: 0; }
+        .content-wrapper > .content > .container-fluid { padding: 0; }
+        #frameprincipal { display: block; width: 100%; border: 0; height: calc(100vh - 57px); }
+    </style>
+@stop
 
-<body class="hold-transition sidebar-mini">
-<div class="wrapper">
-    @include("backend.menus.navbar")
-    @include("backend.menus.sidebar")
+@section('content')
+    <iframe id="frameprincipal" name="frameprincipal"></iframe>
 
-    <div class="content-wrapper" style=" background-color: #fff;">
-        <!-- redireccionamiento de vista -->
+    <script>
+        // La pantalla abierta se guarda en la URL (/panel#/admin/...) para que al recargar se mantenga.
+        // Solo se aceptan rutas internas del panel.
+        function rutaGuardada() {
+            var ruta = decodeURIComponent(window.location.hash.slice(1));
+            return /^\/admin\/[^\/]/.test(ruta) && ruta.indexOf('//') === -1 ? ruta : null;
+        }
 
-        <iframe style="width: 100%; resize: initial; overflow: hidden; min-height: 83vh" frameborder="0"  scrolling="" id="frameprincipal" src="{{ route($ruta) }}" name="frameprincipal">
-        </iframe>
+        document.getElementById('frameprincipal').src = rutaGuardada() || "{{ route($ruta) }}";
+    </script>
+@stop
 
-    </div>
+@section('js')
+    <script>
+        $(function () {
+            var $frame = $('#frameprincipal');
+            var $links = $('.nav-sidebar a.nav-link[target="frameprincipal"]');
 
-    @include("backend.menus.footer")
+            // marca en el menú la opción de la pantalla abierta (y abre su submenú si tiene)
+            function marcar(ruta) {
+                var $link = $links.filter(function () { return this.pathname === ruta; });
+                if (!$link.length) return; // subpantallas (ej. productos de una orden) dejan marcada la anterior
 
-</div>
+                $('.nav-sidebar a.nav-link').removeClass('active');
+                $link.addClass('active');
 
-<script src="{{ asset('js/jquery.min.js') }}" type="text/javascript"></script>
-<script src="{{ asset('js/bootstrap.bundle.min.js') }}" type="text/javascript"></script>
-<script src="{{ asset('js/adminlte.min.js') }}" type="text/javascript"></script>
+                var $padres = $link.parents('.nav-item.has-treeview');
+                $padres.addClass('menu-open').children('a.nav-link').addClass('active');
+                $padres.children('.nav-treeview').show();
+            }
 
+            function alCargar() {
+                var loc;
+                try {
+                    loc = $frame[0].contentWindow.location;
+                } catch (e) {
+                    return;
+                }
+                if (loc.href === 'about:blank') return;
 
-@yield('content-admin-js')
+                // si la sesión venció, el iframe termina en el login: se muestra el login en toda la ventana
+                if (loc.pathname === '/') {
+                    window.location.href = '/';
+                    return;
+                }
 
-</body>
-</html>
+                var ruta = loc.pathname + loc.search;
+                history.replaceState(null, '', window.location.pathname + '#' + ruta);
+                marcar(loc.pathname);
+            }
+
+            $frame.on('load', alCargar);
+
+            // por si el iframe terminó de cargar antes de que este script se ejecutara
+            try {
+                if ($frame[0].contentDocument && $frame[0].contentDocument.readyState === 'complete') alCargar();
+            } catch (e) {}
+
+            $('#menu-cerrar-sesion > a').on('click', function (e) {
+                e.preventDefault();
+                document.getElementById('logout-form').submit();
+            });
+
+            $links.on('click', function () {
+                marcar(this.pathname);
+                // en celular se cierra el menú al elegir una opción
+                if (window.innerWidth < 992) {
+                    $('body').removeClass('sidebar-open').addClass('sidebar-collapse');
+                }
+            });
+        });
+    </script>
+@stop

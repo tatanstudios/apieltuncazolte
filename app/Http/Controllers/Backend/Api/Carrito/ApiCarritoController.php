@@ -11,7 +11,8 @@ use App\Models\Horario;
 use App\Models\InformacionAdmin;
 use App\Models\OrdenesDescripcion;
 use App\Models\OrdenesDirecciones;
-use App\Models\Zonas;
+use App\Models\OrdenesDescripcionOpcion;
+use App\Services\Modificadores;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,34 @@ use Illuminate\Support\Facades\Validator;
 
 class ApiCarritoController extends Controller
 {
+    /**
+     * Filas del carrito con el precio por unidad ya calculado (producto + opciones elegidas)
+     * y la validación de las opciones contra las reglas actuales del producto.
+     */
+    private function filasCarrito(int $idCarrito)
+    {
+        $filas = DB::table('producto AS p')
+            ->join('carrito_extra AS c', 'c.id_producto', '=', 'p.id')
+            ->select('p.id AS productoID', 'p.nombre', 'c.cantidad',
+                'p.imagen', 'p.precio', 'p.activo',
+                'c.id AS carritoid', 'p.utiliza_imagen', 'c.nota_producto AS nota')
+            ->where('c.id_carrito_temporal', $idCarrito)
+            ->orderBy('c.id')
+            ->get();
+
+        foreach ($filas as $f) {
+            $validacion = Modificadores::validar($f->productoID, Modificadores::seleccionDeFila($f->carritoid));
+
+            $f->modificadoresOk = $validacion['ok'];
+            $f->modificadoresMensaje = $validacion['mensaje'];
+            $f->lineas = $validacion['lineas'];
+            $f->precioUnidad = round((float) $f->precio + $validacion['extra'], 2);
+            $f->opciones = Modificadores::texto($validacion['lineas']);
+        }
+
+        return $filas;
+    }
+
     public function verCarritoDecompras(Request $request){
 
         $reglaDatos = array(
@@ -44,35 +73,36 @@ class ApiCarritoController extends Controller
 
                 // preguntar si usuario ya tiene un carrito de compras
                 if($cart = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
-                    $producto = DB::table('producto AS p')
-                        ->join('carrito_extra AS c', 'c.id_producto', '=', 'p.id')
-                        ->select('p.id AS productoID', 'p.nombre', 'c.cantidad',
-                            'p.imagen', 'p.precio', 'p.activo',
-                            'c.id AS carritoid', 'p.utiliza_imagen')
-                        ->where('c.id_carrito_temporal', $cart->id)
-                        ->get();
+                    $producto = $this->filasCarrito($cart->id);
+
+                    $subTotal = 0;
 
                     // verificar cada producto
                     foreach ($producto as $pro) {
 
-                        // verificar si un producto no esta disponible o activo
-
                         // saver si al menos un producto no esta activo o disponible
                         if($pro->activo == 0){
                             $estadoProductoGlobal = 1; // producto no disponible global
+                            $pro->titulo = 'No disponible';
+                            $pro->mensaje = 'Quítalo para continuar';
+                        } else if (!$pro->modificadoresOk) {
+                            // cambiaron las opciones del producto: el cliente debe editarlo
+                            $estadoProductoGlobal = 1;
+                            $pro->titulo = 'Revisa las opciones';
+                            $pro->mensaje = $pro->modificadoresMensaje;
                         }
 
-                        // multiplicar cantidad por el precio de cada producto
-                        $precio = $pro->cantidad * $pro->precio;
+                        // precio unitario ya incluye las opciones elegidas
+                        $total = $pro->cantidad * $pro->precioUnidad;
+                        $subTotal += $total;
 
-                        // convertir
-                        $valor = number_format((float)$precio, 2, '.', ',');
+                        $pro->preciobase = number_format((float) $pro->precio, 2, '.', ','); // sin opciones
+                        $pro->preciounitario = number_format($pro->precioUnidad, 2, '.', ',');
+                        $pro->precioformat = number_format($total, 2, '.', ','); // total de la fila
+                        $pro->precio = number_format($total, 2, '.', ''); // se mantiene por compatibilidad
 
-                        $pro->precio = $valor;
+                        unset($pro->precioUnidad, $pro->modificadoresOk, $pro->modificadoresMensaje, $pro->lineas);
                     }
-
-                    // sub total de la orden
-                    $subTotal = collect($producto)->sum('precio'); // sumar todos el precio
 
                     return [
                         'success' => 1,
@@ -132,8 +162,8 @@ class ApiCarritoController extends Controller
         if($ctm = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
 
             // encontrar el producto a borrar
-            if(CarritoExtra::where('id', $request->carritoid)->first()){
-                CarritoExtra::where('id', $request->carritoid)->delete();
+            if(CarritoExtra::where('id', $request->carritoid)->where('id_carrito_temporal', $ctm->id)->first()){
+                CarritoExtra::where('id', $request->carritoid)->where('id_carrito_temporal', $ctm->id)->delete();
 
                 // saver si tenemos mas productos aun
                 $dato = CarritoExtra::where('id_carrito_temporal', $ctm->id)->get();
@@ -169,12 +199,26 @@ class ApiCarritoController extends Controller
 
         // buscar carrito de compras a quien pertenece el producto
         // verificar si existe el carrito
-        if(CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
-            // verificar si existe el carrito extra id que manda el usuario
-            if(CarritoExtra::where('id', $request->carritoid)->first()){
+        if($ctm = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
+            // verificar si existe el carrito extra id que manda el usuario (y que sea de su carrito)
+            if($fila = CarritoExtra::where('id', $request->carritoid)->where('id_carrito_temporal', $ctm->id)->first()){
 
-                CarritoExtra::where('id', $request->carritoid)->update(['cantidad' => $request->cantidad,
-                    'nota_producto' => $request->nota]);
+                // si la app manda opciones, se validan y reemplazan (versiones viejas no las mandan)
+                $lineas = null;
+                if ($request->has('opciones')) {
+                    $modificadores = Modificadores::validar((int) $fila->id_producto, Modificadores::parsear($request->opciones));
+                    if (!$modificadores['ok']) {
+                        return ['success' => 3, 'titulo' => 'Opciones', 'mensaje' => $modificadores['mensaje']];
+                    }
+                    $lineas = $modificadores['lineas'];
+                }
+
+                DB::transaction(function () use ($fila, $request, $lineas) {
+                    $fila->update(['cantidad' => $request->cantidad, 'nota_producto' => $request->nota]);
+                    if ($lineas !== null) {
+                        Modificadores::guardarEnFila($fila->id, $lineas);
+                    }
+                });
 
                 return [
                     'success' => 1 // cantidad actualizada
@@ -200,9 +244,9 @@ class ApiCarritoController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
-        if(CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
+        if($ctm = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
 
-            if(CarritoExtra::where('id', $request->carritoid)->first()){
+            if(CarritoExtra::where('id', $request->carritoid)->where('id_carrito_temporal', $ctm->id)->first()){
 
                 // informacion del producto + cantidad elegida
                 $producto = DB::table('producto AS p')
@@ -212,9 +256,17 @@ class ApiCarritoController extends Controller
                     ->where('c.id', $request->carritoid)
                     ->first();
 
+                // opciones del producto y lo que el cliente ya había elegido
+                $seleccion = [];
+                foreach (Modificadores::seleccionDeFila((int) $request->carritoid) as $idOpcion => $cantidad) {
+                    $seleccion[] = ['id_opcion' => $idOpcion, 'cantidad' => $cantidad];
+                }
+
                 return [
                     'success' => 1,
                     'producto' => $producto,
+                    'modificadores' => Modificadores::grupos((int) $producto->productoID),
+                    'seleccion' => $seleccion,
                 ];
 
             }else{
@@ -252,21 +304,19 @@ class ApiCarritoController extends Controller
                     ->where('seleccionado', 1)
                     ->first();
 
-                // listado de productos del carrito
-                $producto = DB::table('producto AS p')
-                    ->join('carrito_extra AS c', 'c.id_producto', '=', 'p.id')
-                    ->select('p.precio', 'c.cantidad')
-                    ->where('c.id_carrito_temporal', $cart->id)
-                    ->get();
-
+                // listado de productos del carrito (precio con opciones) para el resumen
                 $subtotal = 0;
-                // multiplicar precio x cantidad
-                foreach($producto as $p){
-
-                    $cantidad = $p->cantidad;
-                    $precio = $p->precio;
-                    $multi = $cantidad * $precio;
-                    $subtotal = $subtotal + $multi;
+                $resumen = [];
+                foreach($this->filasCarrito($cart->id) as $p){
+                    $totalFila = $p->cantidad * $p->precioUnidad;
+                    $subtotal += $totalFila;
+                    $resumen[] = [
+                        'cantidad' => (int) $p->cantidad,
+                        'nombre' => $p->nombre,
+                        'opciones' => $p->opciones,
+                        'nota' => $p->nota,
+                        'total' => number_format($totalFila, 2, '.', ','),
+                    ];
                 }
 
                 $minimoConsumo = 6; // $6.00 DOLARES ES EL MINIMO DE CONSUMO
@@ -286,8 +336,13 @@ class ApiCarritoController extends Controller
                     'total' => $total,
                     'cliente' => $infoDireccion->nombre,
                     'direccion' => $infoDireccion->direccion,
+                    'telefono' => $infoDireccion->telefono,
+                    'referencia' => $infoDireccion->punto_referencia,
                     'minimo' => $minimo,
-                    'mensaje' => $msjMinimoConsumo
+                    'mensaje' => $msjMinimoConsumo,
+                    'minimoconsumo' => number_format((float) $minimoConsumo, 2, '.', ','),
+                    'faltante' => number_format(max(0, $minimoConsumo - $subtotal), 2, '.', ','),
+                    'productos' => $resumen,
                 ];
 
             }else{
@@ -375,22 +430,19 @@ class ApiCarritoController extends Controller
             // VERIFICAR SI TENGO CARRITO DE COMPRAS
             if($cart = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
 
-                // listado de productos del carrito
-                $producto = DB::table('producto AS p')
-                    ->join('carrito_extra AS c', 'c.id_producto', '=', 'p.id')
-                    ->select('p.precio', 'c.cantidad', 'p.id', 'c.nota_producto')
-                    ->where('c.id_carrito_temporal', $cart->id)
-                    ->get();
+                // listado de productos del carrito (precio con opciones)
+                $producto = $this->filasCarrito($cart->id);
 
                 $total = 0;
 
-                // multiplicar precio x cantidad
                 foreach($producto as $p){
-
-                    $cantidad = $p->cantidad;
-                    $precio = $p->precio;
-                    $multi = $cantidad * $precio;
-                    $total = $total + $multi;
+                    if ($p->activo == 0) {
+                        return ['success' => 4, 'mensaje' => "«{$p->nombre}» no está disponible, quítalo del carrito"];
+                    }
+                    if (!$p->modificadoresOk) {
+                        return ['success' => 4, 'mensaje' => "Revisa las opciones de «{$p->nombre}»: {$p->modificadoresMensaje}"];
+                    }
+                    $total += $p->cantidad * $p->precioUnidad;
                 }
 
                 $minimoConsumo = 6; // $6.00 DOLARES ES EL MINIMO DE CONSUMO
@@ -424,14 +476,28 @@ class ApiCarritoController extends Controller
                 );
 
                 // guadar todos los productos de esa orden
+                // el precio guardado es por unidad e incluye las opciones; las opciones se copian
+                // para que la orden no cambie si luego se editan los modificadores del producto
                 foreach($producto as $p){
 
-                    $data = array('id_ordenes' => $idOrden,
-                        'id_producto' => $p->id,
+                    $idDescripcion = OrdenesDescripcion::insertGetId([
+                        'id_ordenes' => $idOrden,
+                        'id_producto' => $p->productoID,
                         'cantidad' => $p->cantidad,
-                        'precio' => $p->precio,
-                        'nota' => $p->nota_producto);
-                    OrdenesDescripcion::insert($data);
+                        'precio' => $p->precioUnidad,
+                        'nota' => $p->nota,
+                    ]);
+
+                    foreach ($p->lineas as $l) {
+                        OrdenesDescripcionOpcion::create([
+                            'id_ordenes_descripcion' => $idDescripcion,
+                            'id_opcion' => $l['id_opcion'],
+                            'grupo' => $l['grupo'],
+                            'opcion' => $l['opcion'],
+                            'precio' => $l['precio'],
+                            'cantidad' => $l['cantidad'],
+                        ]);
+                    }
                 }
 
 

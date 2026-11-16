@@ -24,5 +24,10 @@ class Producto extends Model
         'utiliza_imagen'
     ];
 
+    /** Bloques de modificadores (opciones que elige el cliente). */
+    public function modificadores()
+    {
+        return $this->hasMany(ModificadorGrupo::class, 'id_producto');
+    }
 
 }

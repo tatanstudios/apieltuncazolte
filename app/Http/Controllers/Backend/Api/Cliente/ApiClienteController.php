@@ -7,7 +7,6 @@ use App\Jobs\SendEmailJobs;
 use App\Mail\SendEmailCodigo;
 use App\Models\Clientes;
 use App\Models\InformacionAdmin;
-use App\Models\IntentosCorreo;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +34,10 @@ class ApiClienteController extends Controller
 
             if (Hash::check($request->password, $info->password)) {
 
-                // inicio sesion
-                return ['success' => 1, 'id' => strval($info->id)];
+                // inicio sesion: cada inicio de sesión genera un token para ese teléfono
+                $token = $info->createToken('app')->plainTextToken;
+
+                return ['success' => 1, 'id' => strval($info->id), 'token' => $token];
 
             }else{
                 // contraseña incorrecta
@@ -52,6 +53,15 @@ class ApiClienteController extends Controller
 
 
 
+
+
+    // cierra la sesión del teléfono: el token deja de servir
+    public function logoutCliente(Request $request){
+
+        $request->user()->currentAccessToken()->delete();
+
+        return ['success' => 1];
+    }
 
 
     public function actualizarPasswordCliente(Request $request){
@@ -73,6 +83,36 @@ class ApiClienteController extends Controller
         }else{
             return ['success' => 2];
         }
+    }
+
+
+    // correo para recuperar la contraseña
+    public function verCorreoCliente(Request $request){
+
+        $cliente = $request->user();
+
+        return ['success' => 1, 'correo' => $cliente->correo];
+    }
+
+
+    public function actualizarCorreoCliente(Request $request){
+
+        $validator = Validator::make($request->all(), ['correo' => 'required|email|max:100']);
+
+        if ($validator->fails()){ return ['success' => 0]; }
+
+        $cliente = $request->user();
+        $correo = mb_strtolower(trim($request->correo));
+
+        if(Clientes::where('correo', $correo)->where('id', '!=', $cliente->id)->exists()){
+            // otro cliente ya usa ese correo
+            return ['success' => 2];
+        }
+
+        $cliente->correo = $correo;
+        $cliente->save();
+
+        return ['success' => 1, 'correo' => $correo];
     }
 
 }

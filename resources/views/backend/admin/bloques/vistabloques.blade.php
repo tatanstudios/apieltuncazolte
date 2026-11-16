@@ -1,7 +1,7 @@
 @extends('backend.menus.superior')
 
 @section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
@@ -74,6 +74,15 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label>Vista en la app</label>
+                                    <select class="form-control" id="tipo-vista-nuevo">
+                                        <option value="1">Lista (productos uno debajo de otro)</option>
+                                        <option value="2">Tienda (cuadrícula con filtro por categoría)</option>
+                                    </select>
+                                </div>
+
+
+                                <div class="form-group">
                                     <div>
                                         <label>Imagen</label>
                                         <p>Tamaño recomendado de: 600 x 400 px</p>
@@ -117,6 +126,15 @@
                                 <input type="hidden" id="id-editar">
                                 <input type="text" maxlength="100" class="form-control" id="nombre-editar" placeholder="Nombre">
                             </div>
+
+                            <div class="form-group">
+                                <label>Vista en la app</label>
+                                <select class="form-control" id="tipo-vista-editar">
+                                    <option value="1">Lista (productos uno debajo de otro)</option>
+                                    <option value="2">Tienda (cuadrícula con filtro por categoría)</option>
+                                </select>
+                            </div>
+
 
                             <div class="form-group">
                                 <div>
@@ -214,6 +232,7 @@
             var formData = new FormData();
             formData.append('nombre', nombre);
             formData.append('imagen', imagen.files[0]);
+            formData.append('tipo_vista', document.getElementById('tipo-vista-nuevo').value);
 
             axios.post('/admin/bloques/nuevo', formData, {
             })
@@ -249,6 +268,7 @@
                         $('#modalEditar').modal('show');
                         $('#id-editar').val(id);
                         $('#nombre-editar').val(response.data.bloque.nombre);
+                        $('#tipo-vista-editar').val(response.data.bloque.tipo_vista || 1);
 
                         if(response.data.bloque.activo === 0){
                             $("#toggle-activo").prop("checked", false);
@@ -298,6 +318,7 @@
             formData.append('nombre', nombre);
             formData.append('imagen', imagen.files[0]);
             formData.append('cbactivo', check_activo);
+            formData.append('tipo_vista', document.getElementById('tipo-vista-editar').value);
 
             axios.post('/admin/bloques/editar', formData, {
             })

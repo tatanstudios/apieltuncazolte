@@ -171,7 +171,7 @@
     </div>
 </div>
 
-<script src="{{ asset('js/jquery.min.js') }}" type="text/javascript"></script>
+<script src="{{ asset('vendor/jquery/jquery.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/sweetalert2.all.min.js') }}" type="text/javascript"></script>
 </body>

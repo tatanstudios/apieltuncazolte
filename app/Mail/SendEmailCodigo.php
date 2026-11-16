@@ -31,7 +31,8 @@ class SendEmailCodigo extends Mailable
     public function build()
     {
 
-        $address = 'admin@tuncazo.xyz';
+        // Gmail solo permite enviar desde la cuenta autenticada (MAIL_FROM_ADDRESS en el .env)
+        $address = config('mail.from.address');
         $subject = 'Recuperación de contraseña';
         $name = 'El Tuncazo';
 

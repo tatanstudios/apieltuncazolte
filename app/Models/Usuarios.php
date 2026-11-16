@@ -16,6 +16,12 @@ class Usuarios extends Authenticatable
     protected $table = 'usuarios';
     public $timestamps = false;
 
+    // AdminLTE muestra Auth::user()->name en el menu de usuario; la tabla usa "nombre"
+    public function getNameAttribute()
+    {
+        return $this->nombre;
+    }
+
 
     /**
      * The attributes that are mass assignable.

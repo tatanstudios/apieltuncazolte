@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Frontend\Login;
 
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Controllers\Controller;
 use App\Models\Usuarios;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class LoginController extends Controller
+class LoginController extends Controller implements HasMiddleware
 {
-    public function __construct(){
-        $this->middleware('guest', ['except' => ['logout']]);
+    public static function middleware(): array
+    {
+        return [new Middleware('guest', except: ['logout'])];
     }
 
     public function index(){

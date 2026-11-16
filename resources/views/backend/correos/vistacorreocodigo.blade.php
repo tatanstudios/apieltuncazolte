@@ -113,7 +113,8 @@
 
                 <tr>
                     <td bgcolor="#ffffff" align="center" style="padding: 10px 20px 30px 20px; color: #0D2C55; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-                        <p style="margin: 0;">{{ $codigo }}</p>
+                        <p style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: 8px;">{{ $codigo }}</p>
+                        <p style="margin: 10px 0 0 0; font-size: 14px; color: #666666;">El código vence en 15 minutos.</p>
                     </td>
                 </tr>
                 <tr>

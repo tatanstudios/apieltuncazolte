@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Backend\Admin\Clientes;
 use App\Http\Controllers\Controller;
 use App\Models\Clientes;
 use App\Models\DireccionCliente;
-use App\Models\Zonas;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -97,14 +96,9 @@ class ClientesController extends Controller
 
     public function tablaIndexListaDirecciones($id){
 
-        $lista = DireccionCliente::where('clientes_id', $id)
+        $lista = DireccionCliente::where('id_cliente', $id)
             ->orderBy('nombre')
             ->get();
-
-        foreach ($lista as $ll){
-            $infoZona = Zonas::where('id', $ll->zonas_id)->first();
-            $ll->zona = $infoZona->nombre;
-        }
 
         return view('backend.admin.cliente.direcciones.tabladireccion', compact('id', 'lista'));
     }

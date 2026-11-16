@@ -42,6 +42,13 @@
                                         <i class="fas fa-eye" title="Editar"></i>&nbsp; Editar
                                     </button>
 
+                                    <a class="btn btn-info btn-xs" style="margin-top: 4px" href="{{ url('/admin/productos/modificadores/'.$dato->id) }}">
+                                        <i class="fas fa-list"></i>&nbsp; Modificadores
+                                        @if(($dato->total_modificadores ?? 0) > 0)
+                                            <span class="badge badge-light">{{ $dato->total_modificadores }}</span>
+                                        @endif
+                                    </a>
+
                                 </td>
 
                             </tr>

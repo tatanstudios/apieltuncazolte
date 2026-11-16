@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Backend\Admin\Perfil;
 
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendNotiClienteJobs;
 use App\Models\Usuarios;
@@ -9,10 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
-class PerfilController extends Controller
+class PerfilController extends Controller implements HasMiddleware
 {
-    public function __construct(){
-        $this->middleware('auth');
+    public static function middleware(): array
+    {
+        return [new Middleware('auth')];
     }
 
     public function indexEditarPerfil(){

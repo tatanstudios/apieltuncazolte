@@ -19,7 +19,8 @@
 
                             @foreach($horario as $dato)
                                 <tr>
-                                    <td>{{ $dato->nombre }}</td>
+                                    {{-- data-order: al ordenar por "Día" se respeta Lunes → Domingo --}}
+                                    <td data-order="{{ $dato->orden_semana }}">{{ $dato->nombre }}</td>
                                     <td>{{ $dato->hora1 }}</td>
                                     <td>{{ $dato->hora2 }}</td>
                                     <td>
@@ -56,6 +57,7 @@
             "lengthChange": true,
             "searching": true,
             "ordering": true,
+            "order": [[0, "asc"]], // Lunes primero (usa data-order de la columna Día)
             "info": true,
             "autoWidth": false,
 

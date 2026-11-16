@@ -16,5 +16,9 @@ class BloqueServicios extends Model
         'imagen',
         'posicion',
         'activo',
+        'tipo_vista', // 1 = lista, 2 = tienda
     ];
+
+    const VISTA_LISTA = 1;
+    const VISTA_TIENDA = 2;
 }

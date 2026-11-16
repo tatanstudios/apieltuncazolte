@@ -18,6 +18,7 @@ class ApiRegistroController extends Controller
         $rules = array(
             'usuario' => 'required',
             'password' => 'required',
+            'correo' => 'nullable|email|max:100', // opcional, sirve para recuperar la contraseña
         );
 
         // version
@@ -31,15 +32,24 @@ class ApiRegistroController extends Controller
             return ['success' => 1, 'titulo' => 'Nota', 'mensaje' => 'Este usuario ya existe'];
         }
 
+        $correo = $request->filled('correo') ? mb_strtolower(trim($request->correo)) : null;
+
+        if($correo && Clientes::where('correo', $correo)->exists()){
+            return ['success' => 1, 'titulo' => 'Nota', 'mensaje' => 'Este correo ya está registrado'];
+        }
+
         $fecha = Carbon::now('America/El_Salvador');
 
         $usuario = new Clientes();
         $usuario->usuario = $request->usuario;
+        $usuario->correo = $correo;
         $usuario->password = Hash::make($request->password);
         $usuario->fecha = $fecha;
 
         if($usuario->save()){
-            return ['success'=> 2, 'id'=> strval($usuario->id), 'titulo' => 'Nota', 'mensaje' => 'Registro exitoso'];
+            $token = $usuario->createToken('app')->plainTextToken;
+
+            return ['success'=> 2, 'id'=> strval($usuario->id), 'token' => $token, 'titulo' => 'Nota', 'mensaje' => 'Registro exitoso'];
         }else{
             return ['success' => 4,  'titulo' => 'Nota', 'mensaje' => 'Error'];
         }

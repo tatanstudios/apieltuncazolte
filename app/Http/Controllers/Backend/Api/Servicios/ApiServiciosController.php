@@ -25,7 +25,7 @@ class ApiServiciosController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
-        if(BloqueServicios::where('id', $request->categoria)->first()){
+        if($bloque = BloqueServicios::where('id', $request->categoria)->first()){
 
             $productos = Categorias::where('id_bloque_servicios', $request->categoria)
                 ->where('activo', 1)
@@ -52,6 +52,8 @@ class ApiServiciosController extends Controller
 
             return [
                 'success' => 1,
+                // cómo mostrar los productos en la app: 1 = lista, 2 = tienda (se elige en el panel)
+                'tipo_vista' => (int) ($bloque->tipo_vista ?? 1),
                 'productos' => $productos,
             ];
         }

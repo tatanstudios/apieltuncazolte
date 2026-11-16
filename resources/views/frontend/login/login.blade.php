@@ -55,6 +55,22 @@
     .font-500{
         font-weight:500;
     }
+    /* login.css deja transparente el borde de los inputs con focus (input:focus { border-color: transparent !important });
+       se mantiene el mismo borde que sin focus */
+    .form-control:focus {
+        border-color: rgba(0, 0, 0, 0.15) !important;
+    }
+    .btn-ver-password {
+        background-color: #fff;
+        color: #6c757d;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-left: 0;
+        width: 48px;
+    }
+    .btn-ver-password:hover, .btn-ver-password:focus {
+        color: #673AB7;
+        box-shadow: none !important;
+    }
     .image-size-small{
         width:140px;
         margin:0 auto;
@@ -105,6 +121,13 @@
                                 <span class="input-group-text"><i class="fas fa-key"></i></span>
                             </div>
                             <input id="password" maxlength="16" type="password" class="form-control" required placeholder="Contraseña" autocomplete="off">
+                            <div class="input-group-append">
+                                <button type="button" id="btnVerPassword" class="btn btn-ver-password" onclick="verPassword()" title="Mostrar contraseña" aria-label="Mostrar contraseña">
+                                    {{-- Font Awesome (JS) cambia los <i> por SVG, por eso se alterna entre dos íconos --}}
+                                    <span id="iconoVer"><i class="fas fa-eye"></i></span>
+                                    <span id="iconoOcultar" style="display: none"><i class="fas fa-eye-slash"></i></span>
+                                </button>
+                            </div>
                         </div>
 
                         <br>
@@ -121,7 +144,7 @@
 </div>
 
 
-<script src="{{ asset('js/jquery.min.js') }}" type="text/javascript"></script>
+<script src="{{ asset('vendor/jquery/jquery.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
 <script src="{{ asset('js/sweetalert2.all.min.js') }}" type="text/javascript"></script>
@@ -148,6 +171,18 @@
             login();
         }
     });
+
+    function verPassword() {
+        var mostrar = inputPassword.type === 'password';
+        var boton = document.getElementById('btnVerPassword');
+
+        inputPassword.type = mostrar ? 'text' : 'password';
+        document.getElementById('iconoVer').style.display = mostrar ? 'none' : '';
+        document.getElementById('iconoOcultar').style.display = mostrar ? '' : 'none';
+        boton.title = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+        boton.setAttribute('aria-label', boton.title);
+        inputPassword.focus();
+    }
 
     function login() {
 

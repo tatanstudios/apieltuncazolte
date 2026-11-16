@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css?family=Muli:400" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Passion+One" rel="stylesheet">
 
-    <link type="text/css" rel="stylesheet" href="{{ asset('fontawesome-free/css/fontawesome.min.css') }}" />
+    <link type="text/css" rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/fontawesome.min.css') }}" />
 </head>
 
 <body>

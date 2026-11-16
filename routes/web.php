@@ -7,14 +7,11 @@ use App\Http\Controllers\Backend\Admin\Control\RolesController;
 use App\Http\Controllers\Backend\Admin\Control\PermisosController;
 use App\Http\Controllers\Backend\Admin\Perfil\PerfilController;
 use App\Http\Controllers\Backend\Admin\Servicios\CategoriasController;
+use App\Http\Controllers\Backend\Admin\Servicios\ModificadoresController;
 use App\Http\Controllers\Backend\Admin\Clientes\ClientesController;
 use App\Http\Controllers\Backend\Admin\Eventos\EventosController;
 use App\Http\Controllers\Backend\Admin\Horario\HorarioController;
 use App\Http\Controllers\Backend\Admin\Ordenes\OrdenesController;
-use App\Http\Controllers\Backend\Admin\Motorista\MotoristaController;
-use App\Http\Controllers\PersonalController;
-
-
 
 // INICIO
 Route::get('/', [LoginController::class,'index'])->name('login');
@@ -72,17 +69,17 @@ Route::post('/admin/productos/informacion', [CategoriasController::class,'inform
 Route::post('/admin/productos/editar', [CategoriasController::class,'editarProductos']);
 Route::post('/admin/productos/ordenar', [CategoriasController::class,'ordenarProductos']);
 
+// --- MODIFICADORES DE PRODUCTO ---
+Route::get('/admin/productos/modificadores/{id}', [ModificadoresController::class,'index']);
+Route::get('/admin/productos/modificadores/informacion/{id}', [ModificadoresController::class,'informacion']);
+Route::post('/admin/productos/modificadores/guardar', [ModificadoresController::class,'guardar']);
+
 // iniciar la orden y se envia notificacion al cliente
 Route::post('/admin/ordenes/iniciar', [OrdenesController::class,'iniciarOrden']);
 
 // PRODUCTOS DE LA ORDEN
 Route::get('/admin/productos/ordenes/{id}', [OrdenesController::class,'indexProductosOrdenes']);
 Route::get('/admin/productos/ordenes/tabla/{id}', [OrdenesController::class,'tablaOrdenesProducto']);
-
-
-
-
-
 
 
 // --- ORDENES TODAS---
@@ -97,18 +94,12 @@ Route::get('/admin/ordenes-canceladas/todas/tablas', [OrdenesController::class,'
 Route::post('/admin/ordenes/cancelar', [OrdenesController::class,'cancelarOrden']);
 
 
-
-
 // ORDENES PENDIENTES
 
 Route::get('/admin/ordenes-pendientes/lista', [OrdenesController::class,'indexOrdenesPendientes'])->name('index.ordenes.pendientes');
 Route::get('/admin/ordenes-pendientes/tabla/lista', [OrdenesController::class,'tablaOrdenesPendientes']);
 
 Route::get('/admin/ordenes/ticket/{id}', [OrdenesController::class,'imprimirTicketV2']);
-
-
-
-Route::get('/admin/ordenes/mapa/cliente/{id}', [OrdenesController::class,'verMapaCliente']);
 
 
 // Notificacion al cliente
@@ -119,14 +110,11 @@ Route::get('/admin/ordenes-hoy/lista', [OrdenesController::class,'indexOrdenHoy'
 Route::get('/admin/ordenes-hoy/tabla/lista', [OrdenesController::class,'tablaOrdenesHoy']);
 
 
-
-
 // --- HORARIO ---
 Route::get('/admin/horario', [HorarioController::class,'indexHorario'])->name('index.horario');
 Route::get('/admin/horario/tablas', [HorarioController::class,'tablaHorario']);
 Route::post('/admin/horario/informacion', [HorarioController::class,'informacionHorario']);
 Route::post('/admin/horario/editar', [HorarioController::class,'editarHorario']);
-
 
 
 // --- CLIENTES ---
@@ -147,56 +135,6 @@ Route::get('/admin/configuracion/tablas', [HorarioController::class, 'tablaConfi
 Route::post('/admin/configuracion/informacion', [HorarioController::class,'informacionConfiguracion']);
 Route::post('/admin/configuracion/editar', [HorarioController::class,'editarConfiguracion']);
 
-// --- INTENTOS DE RECUPERACION DE CONTRASEÑA ---
-Route::get('/admin/intentos-correo/lista', [HorarioController::class, 'indexIntentosCorreo'])->name('index.intentos.correo');
-Route::get('/admin/intentos-correo/tabla/lista', [HorarioController::class, 'tablaIntentosCorreo']);
-
-// --- TIPO DE SERVICIO ---
-Route::get('/admin/tiposervicio/index', [HorarioController::class, 'indexTipoServicio'])->name('index.tiposervicio');
-Route::get('/admin/tiposervicio/tabla', [HorarioController::class, 'tablaTipoServicio']);
-Route::post('/admin/tiposervicio/nuevo', [HorarioController::class, 'nuevoTipoServicio']);
-Route::post('/admin/tiposervicio/informacion', [HorarioController::class,'informacionTipoServicio']);
-Route::post('/admin/tiposervicio/editar', [HorarioController::class,'editarTipoServicio']);
-
-
-
-
-//***** MOTORISTAS *******
-Route::get('/admin/motorista/index', [MotoristaController::class, 'indexNuevoMotorista'])->name('index.nuevo.motorista');
-Route::get('/admin/motorista/tabla', [MotoristaController::class, 'tablaNuevoMotorista']);
-Route::post('/admin/motorista/nuevo', [MotoristaController::class, 'nuevoMotorista']);
-Route::post('/admin/motorista/informacion', [MotoristaController::class, 'infoMotorista']);
-Route::post('/admin/motorista/editar', [MotoristaController::class, 'editarMotorista']);
-
-// MOTORISTA DIRECCIONES
-
-Route::get('/admin/motorista/direccion/index', [MotoristaController::class, 'indexNuevoMotoristaDireccion'])->name('index.nuevo.motorista.direccion');
-Route::get('/admin/motorista/direccion/tabla', [MotoristaController::class, 'tablaNuevoMotoristaDireccion']);
-Route::post('/admin/motorista/direccion/nuevo', [MotoristaController::class, 'nuevoMotoristaDireccion']);
-Route::post('/admin/motorista/direccion/informacion', [MotoristaController::class, 'infoMotoristaDireccion']);
-Route::post('/admin/motorista/direccion/editar', [MotoristaController::class, 'editarMotoristaDireccion']);
-Route::post('/admin/motorista/direccion/borrar', [MotoristaController::class, 'borrarDireccion']);
-Route::get('/admin/motorista/direccion/mapa/{id}', [MotoristaController::class, 'verMapa']);
-
-
-
-
-// EXTRA DIRECCIONES
-
-Route::get('/admin/motorista/direccion-extra/{id}', [MotoristaController::class, 'indexNuevoMotoristaDireccionExtra']);
-Route::get('/admin/motorista/direccion-extra/tabla/{id}', [MotoristaController::class, 'tablaNuevoMotoristaDireccionExtra']);
-Route::post('/admin/motorista/direccion-extra/borrar', [MotoristaController::class, 'borrarDireccionExtra']);
-Route::post('/admin/motorista/direccion-extra/nuevo', [MotoristaController::class, 'nuevoMotoristaDireccionExtra']);
-Route::post('/admin/motorista/direccion-extra/informacion', [MotoristaController::class, 'infoMotoristaDireccionExtra']);
-Route::post('/admin/motorista/direccion-extra/editar', [MotoristaController::class, 'editarMotoristaDireccionExtra']);
-Route::get('/admin/motorista/direccion-extra/mapa/{id}', [MotoristaController::class, 'verMapaDireccionExtra']);
-
-
-Route::get('/admin/motorista/direccion-todas/index', [MotoristaController::class, 'indexDireccionTodas'])->name('index.nuevo.motorista.direccion.todas');
-Route::get('/admin/motorista/direccion-todas/tabla', [MotoristaController::class, 'tablaDireccionTodas']);
-
-
-
 // CERRAR APP
 Route::get('/admin/cerrado/app/index', [HorarioController::class, 'indexCerradoApp'])->name('index.cerrar.app');
 Route::get('/admin/cerrado/app/tabla', [HorarioController::class, 'tablaCerradoApp']);
@@ -204,16 +142,3 @@ Route::post('/admin/cerrado/app/informacion', [HorarioController::class, 'infoCe
 
 Route::post('/admin/cerrado/app/actualizar', [HorarioController::class, 'actualizarCerradoApp']);
 
-
-
-
-
-// VISTAS PERSONALES - APRENDER PRECIOS
-Route::get('/admin/personales/mitienda/indexaddproductos', [PersonalController::class, 'vistaPersonalAgregarProductos']);
-Route::post('/admin/personales/mitienda/nuevoproducto', [PersonalController::class, 'nuevoProductoPersonal']);
-
-
-
-Route::get('/admin/personales/mitienda/index', [PersonalController::class, 'vistaPersonal']);
-Route::post('/admin/personales/mitienda/productos', [PersonalController::class, 'mostrarProductos']);
-Route::post('/admin/personales/mitienda/verificar', [PersonalController::class, 'verificarPrecios']);

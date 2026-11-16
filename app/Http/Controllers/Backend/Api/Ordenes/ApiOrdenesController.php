@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Backend\Api\Ordenes;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\SendNotiPropietarioJobs;
-use App\Models\Afiliados;
 use App\Models\Clientes;
 use App\Models\Ordenes;
 use App\Models\OrdenesDescripcion;
 use App\Models\OrdenesDirecciones;
+use App\Services\Modificadores;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +43,15 @@ class ApiOrdenesController extends Controller
                 $o->direccion = $infoDireccion->direccion;
 
                 $o->total = "$" . number_format((float)$o->precio_consumido, 2, '.', ',');
+
+                // resumen corto para la tarjeta: "2x Desayuno Típico, 1x Pupusa de Frijol"
+                $lineas = DB::table('ordenes_descripcion AS od')
+                    ->join('producto AS p', 'p.id', '=', 'od.id_producto')
+                    ->where('od.id_ordenes', $o->id)
+                    ->orderBy('od.id')
+                    ->get(['od.cantidad', 'p.nombre']);
+                $o->cantidad_productos = (int) $lineas->sum('cantidad');
+                $o->resumen_productos = $lineas->map(fn ($l) => $l->cantidad . 'x ' . $l->nombre)->implode(', ');
 
                 // prioridad
                 if($o->estado_iniciada == 0){
@@ -81,9 +89,9 @@ class ApiOrdenesController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
-        if(Ordenes::where('id', $request->ordenid)->first()){
+        if(Ordenes::where('id', $request->ordenid)->where('id_clientes', $request->clienteid)->first()){
 
-            $orden = Ordenes::where('id', $request->ordenid)->get();
+            $orden = Ordenes::where('id', $request->ordenid)->where('id_clientes', $request->clienteid)->get();
 
             foreach($orden as $o){
 
@@ -96,6 +104,31 @@ class ApiOrdenesController extends Controller
                 }
 
                 $o->fecha_orden = date("h:i A d-m-Y", strtotime($o->fecha_orden));
+
+                // datos para la pantalla de seguimiento
+                $o->total = "$" . number_format((float) $o->precio_consumido, 2, '.', ',');
+
+                if ($dir = OrdenesDirecciones::where('id_ordenes', $o->id)->first()) {
+                    $o->cliente = $dir->nombre;
+                    $o->telefono = $dir->telefono;
+                    $o->direccion = $dir->direccion;
+                    $o->referencia = $dir->punto_referencia;
+                }
+
+                $lineas = DB::table('ordenes_descripcion AS od')
+                    ->join('producto AS p', 'p.id', '=', 'od.id_producto')
+                    ->where('od.id_ordenes', $o->id)
+                    ->orderBy('od.id')
+                    ->get(['od.id', 'od.cantidad', 'od.precio', 'od.nota', 'p.nombre']);
+                $opciones = Modificadores::textoDeOrden($lineas->pluck('id')->all());
+
+                $o->productos = $lineas->map(fn ($l) => [
+                    'cantidad' => (int) $l->cantidad,
+                    'nombre' => $l->nombre,
+                    'opciones' => $opciones[$l->id] ?? [],
+                    'nota' => $l->nota,
+                    'total' => number_format($l->cantidad * (float) $l->precio, 2, '.', ','),
+                ])->values();
             }
 
             return ['success' => 1, 'ordenes' => $orden];
@@ -114,7 +147,7 @@ class ApiOrdenesController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
-        if($orden = Ordenes::where('id', $request->ordenid)->first()){
+        if($orden = Ordenes::where('id', $request->ordenid)->where('id_clientes', $request->clienteid)->first()){
 
             if($orden->estado_iniciada == 1){
                 return ['success' => 1, 'titulo' => 'Nota', 'mensaje' => 'No se puede cancelar la orden, ya fue iniciada'];
@@ -129,7 +162,7 @@ class ApiOrdenesController extends Controller
 
                     $fecha = Carbon::now('America/El_Salvador');
 
-                    Ordenes::where('id', $request->ordenid)->update(['estado_cancelada' => 1,
+                    Ordenes::where('id', $request->ordenid)->where('id_clientes', $request->clienteid)->update(['estado_cancelada' => 1,
                         'cancelada_por' => 1, // CANCELADA POR CLIENTE
                         'visible' => 0,
                         'fecha_cancelada' => $fecha]);
@@ -158,7 +191,7 @@ class ApiOrdenesController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
-        if(Ordenes::where('id', $request->ordenid)->first()){
+        if(Ordenes::where('id', $request->ordenid)->where('id_clientes', $request->clienteid)->first()){
             $producto = DB::table('ordenes AS o')
                 ->join('ordenes_descripcion AS od', 'od.id_ordenes', '=', 'o.id')
                 ->join('producto AS p', 'p.id', '=', 'od.id_producto')
@@ -167,11 +200,14 @@ class ApiOrdenesController extends Controller
                 ->where('o.id', $request->ordenid)
                 ->get();
 
+            $opciones = Modificadores::textoDeOrden($producto->pluck('productoID')->all());
+
             foreach($producto as $p){
                 $cantidad = $p->cantidad;
                 $precio = $p->precio;
                 $multi = $cantidad * $precio;
                 $p->multiplicado = "$" . number_format((float)$multi, 2, '.', ',');
+                $p->opciones = $opciones[$p->productoID] ?? [];
             }
 
             return ['success' => 1, 'productos' => $producto];
@@ -201,7 +237,7 @@ class ApiOrdenesController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
-        Ordenes::where('id', $request->ordenid)->update([
+        Ordenes::where('id', $request->ordenid)->where('id_clientes', $request->clienteid)->update([
             'visible' => 0
         ]);
 

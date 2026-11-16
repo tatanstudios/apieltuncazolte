@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Backend\Admin\Control;
 
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Controllers\Controller;
 use App\Models\Usuarios;
 use Illuminate\Http\Request;
@@ -9,10 +11,11 @@ use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-class PermisosController extends Controller
+class PermisosController extends Controller implements HasMiddleware
 {
-    public function __construct(){
-        $this->middleware('auth');
+    public static function middleware(): array
+    {
+        return [new Middleware('auth')];
     }
 
     public function index(){

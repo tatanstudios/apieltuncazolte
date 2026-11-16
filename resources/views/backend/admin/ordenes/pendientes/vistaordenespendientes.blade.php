@@ -1,7 +1,7 @@
 @extends('backend.menus.superior')
 
 @section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
@@ -49,6 +49,7 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div id="tablaDatatable">
+                            @include('backend.admin.ordenes.pendientes.tablaordenespendientes')
                         </div>
                     </div>
                 </div>
@@ -158,37 +159,204 @@
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
 
-    <script type="text/javascript">
-        $(document).ready(function(){
-
-            var ruta = "{{ URL::to('/admin/ordenes-pendientes/tabla/lista') }}";
-            $('#tablaDatatable').load(ruta);
-
-            countdown();
-        });
-    </script>
-
     <script>
 
-        function recargar(){
-            var ruta = "{{ url('/admin/ordenes-pendientes/tabla/lista') }}";
-            $('#tablaDatatable').load(ruta);
+        var SEGUNDOS_RECARGA = 30;
+        var segundos = SEGUNDOS_RECARGA;
+        var cargando = false;
+        var sesionExpirada = false;
+        var ultimoIdVisto = null; // mayor # de orden ya mostrado, para detectar ordenes nuevas
+        var tabla = null;
+        var audioCtx = null;
+
+        $(document).ready(function(){
+
+            // los errores se manejan en la funcion ajax, no con alert()
+            $.fn.dataTable.ext.errMode = 'none';
+
+            tabla = $('#tabla').DataTable({
+                "ajax": function (data, callback) {
+                    cargarDatos(callback);
+                },
+                "columns": [
+                    { "data": "id" },
+                    { "data": null, "render": function (d, type, row) {
+                            // se ordena por la fecha real, se muestra la fecha formateada
+                            return (type === 'sort' || type === 'type') ? row.fecha_orden : row.fecha_texto;
+                        }},
+                    { "data": "precio_consumido" },
+                    { "data": "nota", "defaultContent": "", "render": $.fn.dataTable.render.text() },
+                    { "data": "cliente", "defaultContent": "", "render": $.fn.dataTable.render.text() },
+                    { "data": "direccion", "defaultContent": "", "render": $.fn.dataTable.render.text() },
+                    { "data": "referencia", "defaultContent": "", "render": $.fn.dataTable.render.text() },
+                    { "data": "telefono", "defaultContent": "", "render": $.fn.dataTable.render.text() },
+                    { "data": "id", "orderable": false, "searchable": false, "render": function (id) {
+                            return '<button type="button" class="btn btn-primary btn-xs" onclick="imprimirTicket(' + id + ')">' +
+                                '<i class="fas fa-print" title="Ticket"></i>&nbsp; Ticket</button>';
+                        }},
+                    { "data": "id", "orderable": false, "searchable": false, "render": function (id) {
+                            return '<button type="button" class="btn btn-success btn-xs" onclick="informacionProducto(' + id + ')">' +
+                                '<i class="fas fa-shopping-cart" title="Productos"></i>&nbsp; Productos</button><br><br>' +
+                                '<button type="button" class="btn btn-warning btn-xs" onclick="informacionIniciar(' + id + ')">' +
+                                '<i class="fas fa-cookie" title="Iniciar"></i>&nbsp; Iniciar</button><br><br>' +
+                                '<button type="button" class="btn btn-danger btn-xs" onclick="informacionCancelar(' + id + ')">' +
+                                '<i class="fas fa-info" title="Cancelar"></i>&nbsp; Cancelar</button>';
+                        }}
+                ],
+                "order": [[0, "desc"]],
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "pagingType": "full_numbers",
+                "lengthMenu": [[10, 25, 50, 100, 150, -1], [10, 25, 50, 100, 150, "Todo"]],
+                "language": {
+                    "sProcessing": "Procesando...",
+                    "sLengthMenu": "Mostrar _MENU_ registros",
+                    "sZeroRecords": "No se encontraron resultados",
+                    "sEmptyTable": "Ningún dato disponible en esta tabla",
+                    "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                    "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+                    "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+                    "sInfoPostFix": "",
+                    "sSearch": "Buscar:",
+                    "sUrl": "",
+                    "sInfoThousands": ",",
+                    "sLoadingRecords": "Cargando...",
+                    "oPaginate": {
+                        "sFirst": "Primero",
+                        "sLast": "Último",
+                        "sNext": "Siguiente",
+                        "sPrevious": "Anterior"
+                    },
+                    "oAria": {
+                        "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+                        "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+                    }
+                }
+            });
+
+            // el navegador solo permite sonido despues de que el usuario interactua con la pagina
+            $(document).one('click keydown', prepararSonido);
+
+            mostrarContador();
+            setInterval(tickContador, 1000);
+        });
+
+        function cargarDatos(callback){
+            cargando = true;
+
+            $.ajax({
+                url: "{{ url('/admin/ordenes-pendientes/tabla/lista') }}",
+                dataType: 'json',
+                cache: false
+            })
+                .done(function (respuesta) {
+                    revisarOrdenesNuevas(respuesta.data);
+                    callback(respuesta);
+                })
+                .fail(function (xhr) {
+                    if(xhr.status === 401 || xhr.status === 419){
+                        sesionVencida();
+                    }else{
+                        toastr.error('No se pudo actualizar el listado, se reintentará');
+                    }
+                    // en el primer intento se deja la tabla vacia; en recargas se conservan los datos
+                    if(ultimoIdVisto === null){
+                        callback({ data: [] });
+                    }
+                })
+                .always(function () {
+                    cargando = false;
+                    segundos = SEGUNDOS_RECARGA;
+                    mostrarContador();
+                });
         }
 
-        function countdown() {
-            var seconds = 30;
-            function tick() {
-                var counter = document.getElementById("contador");
-                seconds--;
-                counter.innerHTML = "0:" + (seconds < 10 ? "0" : "") + String(seconds);
-                if( seconds > 0 ) {
-                    setTimeout(tick, 1000);
-                } else {
-                    recargar();
-                    countdown();
-                }
+        // recarga sin perder busqueda, pagina ni cantidad de registros
+        function recargar(){
+            if(cargando || sesionExpirada || tabla === null) return;
+            segundos = SEGUNDOS_RECARGA;
+            mostrarContador();
+            tabla.ajax.reload(null, false);
+        }
+
+        function tickContador(){
+            if(cargando || sesionExpirada) return;
+            segundos--;
+            if(segundos <= 0){
+                recargar();
+            }else{
+                mostrarContador();
             }
-            tick();
+        }
+
+        function mostrarContador(){
+            var texto = sesionExpirada ? 'detenido' : (cargando ? 'actualizando...' :
+                '0:' + (segundos < 10 ? '0' : '') + segundos);
+            document.getElementById('contador').innerHTML = texto;
+        }
+
+        function revisarOrdenesNuevas(lista){
+            var maximo = 0;
+            var nuevas = 0;
+
+            $.each(lista, function (i, orden) {
+                var id = parseInt(orden.id);
+                if(id > maximo) maximo = id;
+                if(ultimoIdVisto !== null && id > ultimoIdVisto) nuevas++;
+            });
+
+            if(nuevas > 0){
+                toastr.info(nuevas === 1 ? 'Llegó 1 orden nueva' : 'Llegaron ' + nuevas + ' órdenes nuevas');
+                sonarAviso();
+            }
+
+            if(ultimoIdVisto === null || maximo > ultimoIdVisto){
+                ultimoIdVisto = maximo;
+            }
+        }
+
+        function sesionVencida(){
+            sesionExpirada = true;
+            mostrarContador();
+
+            Swal.fire({
+                title: 'Sesión expirada',
+                text: 'Inicia sesión de nuevo para seguir recibiendo órdenes',
+                icon: 'warning',
+                allowOutsideClick: false,
+                confirmButtonText: 'Iniciar sesión'
+            }).then(function () {
+                window.location.href = "{{ route('login') }}";
+            });
+        }
+
+        function prepararSonido(){
+            try {
+                var Ctx = window.AudioContext || window.webkitAudioContext;
+                if(Ctx && audioCtx === null) audioCtx = new Ctx();
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { audioCtx = null; }
+        }
+
+        function sonarAviso(){
+            if(audioCtx === null) return;
+            try {
+                [0, 0.25].forEach(function (inicio) {
+                    var osc = audioCtx.createOscillator();
+                    var gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 880;
+                    gain.gain.value = 0.2;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + inicio);
+                    osc.stop(audioCtx.currentTime + inicio + 0.18);
+                });
+            } catch (e) {}
         }
 
 
@@ -218,7 +386,7 @@
                 })
                 .catch((error) => {
                     closeLoading();
-                    toastr.error('Información no encontrada');
+                    errorPeticion(error, 'Información no encontrada');
                 });
         }
 
@@ -270,12 +438,7 @@
                             showCancelButton: false,
                             confirmButtonColor: '#ff0000',
                             cancelButtonColor: '#d33',
-                            cancelButtonText: 'Cancelar',
-                            confirmButtonText: 'Recargar'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
+                            confirmButtonText: 'Aceptar'
                         })
 
                     }
@@ -292,20 +455,21 @@
                         })
 
                     }
+                    else if(response.data.success === 3){
+                        recargar();
+                        toastr.warning('La orden ya estaba iniciada');
+                    }
                     else{
-                        toastr.error('Reintentar de nuevo');
+                        recargar();
+                        toastr.error('Orden no encontrada');
                     }
                 })
                 .catch((error) => {
                     closeLoading();
-                    toastr.error('Reintentar de nuevo');
+                    errorPeticion(error, 'Reintentar de nuevo');
                 });
         }
 
-        // id de la orden
-        function verMapa(id){
-            window.location.href="{{ url('/admin/ordenes/mapa/cliente') }}/"+id;
-        }
 
         function imprimirTicket(id){
 
@@ -347,14 +511,28 @@
                         toastr.success('Cancelada correctamente');
                         recargar();
                     }
+                    else if (response.data.success === 2) {
+                        $('#modalCancelar').modal('hide');
+                        toastr.warning('La orden ya estaba cancelada');
+                        recargar();
+                    }
                     else {
                         toastr.error('Error al cancelar');
                     }
                 })
                 .catch((error) => {
                     closeLoading();
-                    toastr.error('Error al cancelar');
+                    errorPeticion(error, 'Error al cancelar');
                 });
+        }
+
+        function errorPeticion(error, mensaje){
+            var status = error.response ? error.response.status : 0;
+            if(status === 401 || status === 419){
+                sesionVencida();
+            }else{
+                toastr.error(mensaje);
+            }
         }
 
 

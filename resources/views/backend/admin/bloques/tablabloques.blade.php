@@ -10,6 +10,7 @@
                             <th>Posición</th>
                             <th>Nombre</th>
                             <th>Activo</th>
+                            <th>Vista en la app</th>
                             <th>Imagen</th>
                             <th>Opciones</th>
                         </tr>
@@ -26,6 +27,14 @@
                                         <span class="badge bg-danger">Desactivado</span>
                                     @else
                                         <span class="badge bg-success">Activado</span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if($dato->tipo_vista == 2)
+                                        <span class="badge bg-info">Tienda</span>
+                                    @else
+                                        <span class="badge bg-secondary">Lista</span>
                                     @endif
                                 </td>
 

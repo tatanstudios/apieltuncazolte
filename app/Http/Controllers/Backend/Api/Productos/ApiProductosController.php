@@ -10,7 +10,7 @@ use App\Models\DireccionCliente;
 use App\Models\Horario;
 use App\Models\InformacionAdmin;
 use App\Models\Producto;
-use App\Models\Zonas;
+use App\Services\Modificadores;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +33,11 @@ class ApiProductosController extends Controller
 
             $producto = Producto::where('id', $request->productoid)->get();
 
-            return ['success' => 1, 'producto' => $producto];
+            return [
+                'success' => 1,
+                'producto' => $producto,
+                'modificadores' => Modificadores::grupos((int) $request->productoid),
+            ];
 
         }else{
             return ['success' => 2];
@@ -53,39 +57,37 @@ class ApiProductosController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
+        // opciones elegidas ("idOpcion:cantidad,..."), validadas con las reglas del producto
+        $modificadores = Modificadores::validar((int) $request->productoid, Modificadores::parsear($request->opciones));
+        if (!$modificadores['ok']) {
+            return ['success' => 2, 'titulo' => 'Opciones', 'mensaje' => $modificadores['mensaje']];
+        }
+
         DB::beginTransaction();
 
         try {
 
-            if($infoC = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
-                $extra = new CarritoExtra();
-                $extra->id_carrito_temporal = $infoC->id;
-                $extra->id_producto = $request->productoid;
-                $extra->cantidad = $request->cantidad;
-                $extra->nota_producto = $request->notaproducto;
-                $extra->save();
-            }else{
-                // guardar producto
-                $carrito = new CarritoTemporal();
-                $carrito->id_clientes = $request->clienteid;
-                $carrito->save();
-
-                // guardar producto
-                $idcarrito = $carrito->id;
-                $extra = new CarritoExtra();
-                $extra->id_carrito_temporal = $idcarrito;
-                $extra->id_producto = $request->productoid;
-                $extra->cantidad = $request->cantidad;
-                $extra->nota_producto = $request->notaproducto;
-                $extra->save();
+            if(!$infoC = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
+                $infoC = new CarritoTemporal();
+                $infoC->id_clientes = $request->clienteid;
+                $infoC->save();
             }
+
+            $extra = new CarritoExtra();
+            $extra->id_carrito_temporal = $infoC->id;
+            $extra->id_producto = $request->productoid;
+            $extra->cantidad = $request->cantidad;
+            $extra->nota_producto = $request->notaproducto;
+            $extra->save();
+
+            Modificadores::guardarEnFila($extra->id, $modificadores['lineas']);
 
             DB::commit();
 
             // producto guardado
             return ['success' => 1];
 
-        }catch(\Error $e){
+        }catch(\Throwable $e){
             DB::rollback();
 
             return [

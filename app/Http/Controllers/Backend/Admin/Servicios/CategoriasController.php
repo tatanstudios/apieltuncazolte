@@ -32,6 +32,7 @@ class CategoriasController extends Controller
         $request->validate([
             'nombre' => 'required',
             'imagen' => 'required',
+            'tipo_vista' => 'nullable|in:1,2',
         ]);
 
         // Nombre único para la imagen
@@ -54,6 +55,7 @@ class CategoriasController extends Controller
             'imagen'   => $nombreFoto,
             'activo'   => 1,
             'posicion' => $posicion,
+            'tipo_vista' => $request->tipo_vista ?? BloqueServicios::VISTA_LISTA,
         ]);
 
         return ['success' => 1];
@@ -83,6 +85,7 @@ class CategoriasController extends Controller
             'id'     => 'required',
             'nombre' => 'required',
             'imagen' => 'nullable',
+            'tipo_vista' => 'required|in:1,2',
         ]);
 
         $bloque = BloqueServicios::findOrFail($request->id);
@@ -90,6 +93,7 @@ class CategoriasController extends Controller
         $datos = [
             'nombre' => $request->nombre,
             'activo' => $request->cbactivo,
+            'tipo_vista' => $request->tipo_vista,
         ];
 
         if ($request->hasFile('imagen')) {
@@ -236,7 +240,9 @@ class CategoriasController extends Controller
     // tabla
     public function tablaProductos($id){
 
-        $productos = Producto::where('id_categorias', $id)->orderBy('posicion')->get();
+        $productos = Producto::where('id_categorias', $id)->orderBy('posicion')
+            ->withCount(['modificadores AS total_modificadores'])
+            ->get();
 
         foreach ($productos as $pp){
             $pp->precio = number_format((float)$pp->precio, 2, '.', ',');
