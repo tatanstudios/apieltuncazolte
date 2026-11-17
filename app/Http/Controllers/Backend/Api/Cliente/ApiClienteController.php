@@ -91,7 +91,7 @@ class ApiClienteController extends Controller
 
         $cliente = $request->user();
 
-        return ['success' => 1, 'correo' => $cliente->correo];
+        return ['success' => 1, 'correo' => $cliente->correo, 'usuario' => $cliente->usuario];
     }
 
 

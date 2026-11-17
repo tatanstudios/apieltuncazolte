@@ -13,6 +13,7 @@ use App\Models\OrdenesDescripcion;
 use App\Models\OrdenesDirecciones;
 use App\Models\OrdenesDescripcionOpcion;
 use App\Services\Modificadores;
+use App\Services\EstadoLocal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -324,6 +325,8 @@ class ApiCarritoController extends Controller
 
                 $msjMinimoConsumo = "El mínimo de consumo es: $".number_format((float)$minimoConsumo, 2, '.', ',');;
 
+                $estado = EstadoLocal::ahora();
+
                 if($subtotal >= $minimoConsumo){
                     // si puede ordenar
                     $minimo = 1;
@@ -341,6 +344,10 @@ class ApiCarritoController extends Controller
                     'minimo' => $minimo,
                     'mensaje' => $msjMinimoConsumo,
                     'minimoconsumo' => number_format((float) $minimoConsumo, 2, '.', ','),
+                    // estado del local: si está cerrado la app desactiva "Confirmar orden"
+                    'abierto' => $estado['abierto'] ? 1 : 0,
+                    'estado_texto' => $estado['texto'],
+                    'estado_detalle' => $estado['motivo'] ?? 'Podrás enviar tu orden cuando el local abra.',
                     'faltante' => number_format(max(0, $minimoConsumo - $subtotal), 2, '.', ','),
                     'productos' => $resumen,
                 ];
@@ -378,53 +385,19 @@ class ApiCarritoController extends Controller
 
             //**** VALIDACIONES
 
-            $numSemana = [
-                0 => 1, // domingo
-                1 => 2, // lunes
-                2 => 3, // martes
-                3 => 4, // miercoles
-                4 => 5, // jueves
-                5 => 6, // viernes
-                6 => 7, // sabado
-            ];
-
-            $infoGeneral = InformacionAdmin::where('id', 1)->first();
-
-            // hora y fecha
-            $getValores = Carbon::now('America/El_Salvador');
-            $getDiaHora = $getValores->dayOfWeek;
-            $diaSemana = $numSemana[$getDiaHora];
-            $hora = $getValores->format('H:i:s');
-
-            // verificar sin la segunda hora
-            $horario = Horario::where('dia', $diaSemana)
-                ->where('hora1', '<=', $hora)
-                ->where('hora2', '>=', $hora)
-                ->get();
-
-
-            // CERRADO POR HORARIO
-            if(count($horario) >= 1){
-                // abierto
-            }else{
-                // cerrado horario normal del servicio (2 horarios)
-                return ['success' => 1, 'titulo' => 'Nota', 'mensaje' => 'Cerrado'];
-            }
-
-
-
-            // ESTE DIA ESTA CERRADO?
-            $cerradoHoy = Horario::where('dia', $diaSemana)->first();
-
-            if($cerradoHoy->cerrado == 1){
-                // cerrado este dia el negocio
-                return ['success' => 1, 'titulo' => 'Nota', 'mensaje' => 'Cerrado'];
-            }
-
-            // CERRADO DESDE PANEL DE CONTROL
-            $infoApp = InformacionAdmin::where('id', 1)->first();
-            if($infoApp->cerrado == 1){
-                return ['success' => 2, 'mensaje' => $infoApp->mensaje_cerrado];
+            // local cerrado (panel, día cerrado o fuera de horario): mismo cálculo que el aviso del menú
+            $estado = EstadoLocal::ahora();
+            if (!$estado['abierto']) {
+                $mensaje = $estado['texto'];
+                if (!empty($estado['motivo'])) {
+                    $mensaje .= "\n" . $estado['motivo'];
+                }
+                // 1 = cerrado por horario, 2 = cerrado desde el panel (la app muestra titulo y mensaje)
+                return [
+                    'success' => !empty($estado['motivo']) ? 2 : 1,
+                    'titulo' => 'Local cerrado',
+                    'mensaje' => $mensaje,
+                ];
             }
 
             // VERIFICAR SI TENGO CARRITO DE COMPRAS

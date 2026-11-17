@@ -8,6 +8,7 @@ use App\Models\BloqueSlider;
 use App\Models\Clientes;
 use App\Models\DireccionCliente;
 use App\Models\InformacionAdmin;
+use App\Services\EstadoLocal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,9 +32,24 @@ class ApiZonasServiciosController extends Controller
             ->orderBy('posicion', 'ASC')
             ->get();
 
+        // la ruta es pública: si viene el token se sabe quién es y cuántos productos tiene en el carrito
+        $cantidadCarrito = 0;
+        if ($cliente = auth('sanctum')->user()) {
+            $cantidadCarrito = (int) DB::table('carrito_temporal AS t')
+                ->join('carrito_extra AS e', 'e.id_carrito_temporal', '=', 't.id')
+                ->where('t.id_clientes', $cliente->id)
+                ->sum('e.cantidad');
+        }
+
+        $estado = EstadoLocal::ahora();
+
         return [
             'success' => 1,
             'servicios' => $servicios,
+            'abierto' => $estado['abierto'] ? 1 : 0,
+            'estado_texto' => $estado['texto'],
+            'estado_detalle' => $estado['detalle'],
+            'cantidad_carrito' => $cantidadCarrito,
         ];
     }
 
