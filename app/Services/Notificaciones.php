@@ -39,6 +39,14 @@ class Notificaciones
             return false;
         }
 
+        // La app registra el External ID como "cliente_{id}" porque OneSignal rechaza valores como "1".
+        // También se incluye el id sin prefijo para teléfonos con la app 3.0.0 (versionCode 13), que lo registraba así.
+        $aliases = [];
+        foreach ($idsClientes as $id) {
+            $aliases[] = 'cliente_' . $id;
+            $aliases[] = (string) $id;
+        }
+
         // las llaves nuevas (os_v2_...) usan "Key"; las antiguas usan "Basic"
         $esquema = str_starts_with($llave, 'os_v2_') ? 'Key' : 'Basic';
 
@@ -48,13 +56,14 @@ class Notificaciones
                 ->post('https://api.onesignal.com/notifications?c=push', [
                     'app_id' => $appId,
                     'target_channel' => 'push',
-                    'include_aliases' => ['external_id' => array_values($idsClientes)],
+                    'include_aliases' => ['external_id' => $aliases],
                     'headings' => ['es' => $titulo, 'en' => $titulo],
                     'contents' => ['es' => $mensaje, 'en' => $mensaje],
                     'data' => (object) $datos,
                 ]);
 
-            if (!$respuesta->successful() || $respuesta->json('errors')) {
+            // con id la notificación salió; "errors" puede listar solo los alias sin teléfono (ej. el formato viejo)
+            if (!$respuesta->successful() || empty($respuesta->json('id'))) {
                 Log::warning('OneSignal: notificación rechazada', [
                     'status' => $respuesta->status(),
                     'respuesta' => $respuesta->json(),
