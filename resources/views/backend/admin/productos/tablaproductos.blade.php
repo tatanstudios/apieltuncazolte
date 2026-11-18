@@ -7,21 +7,21 @@
                     <table id="table" class="table table-bordered">
                         <thead>
                         <tr>
-                            <th>Posición</th>
+                            <th style="width: 90px; white-space: nowrap" class="text-center">Posición</th>
                             <th>Nombre</th>
-                            <th>Activo</th>
-                            <th>Precio</th>
-                            <th>Imagen</th>
-                            <th>Opciones</th>
+                            <th style="width: 130px; white-space: nowrap" class="text-center">Activo</th>
+                            <th style="width: 100px; white-space: nowrap" class="text-right">Precio</th>
+                            <th style="width: 120px; white-space: nowrap" class="text-center">Imagen</th>
+                            <th style="width: 230px; white-space: nowrap">Opciones</th>
                         </tr>
                         </thead>
                         <tbody id="tablecontents">
                         @foreach($productos as $dato)
                             <tr class="row1" data-id="{{ $dato->id }}">
 
-                                <td>{{ $dato->posicion }}</td>
+                                <td class="text-center">{{ $dato->posicion }}</td>
                                 <td>{{ $dato->nombre }}</td>
-                                <td>
+                                <td class="text-center">
                                     @if($dato->activo == 0)
                                         <span class="badge bg-danger">Desactivado</span>
                                     @else
@@ -29,15 +29,15 @@
                                     @endif
                                 </td>
 
-                                <td>{{ $dato->precio }}</td>
+                                <td class="text-right">{{ $dato->precio }}</td>
 
-                                <td>
+                                <td class="text-center">
                                     @if($dato->utiliza_imagen == 1)
-                                    <center><img alt="Imagenes" src="{{ url('storage/imagenes/'.$dato->imagen) }}" width="150px" height="150px" /></center>
+                                    <img alt="Imagenes" src="{{ url('storage/imagenes/'.$dato->imagen) }}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 6px" />
                                     @endif
                                 </td>
 
-                                <td>
+                                <td style="white-space: nowrap">
                                     <button type="button" class="btn btn-primary btn-xs" onclick="informacion({{ $dato->id }})">
                                         <i class="fas fa-eye" title="Editar"></i>&nbsp; Editar
                                     </button>

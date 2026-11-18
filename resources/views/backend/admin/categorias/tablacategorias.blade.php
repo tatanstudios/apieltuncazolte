@@ -7,20 +7,20 @@
                     <table id="table" class="table table-bordered">
                         <thead>
                         <tr>
-                            <th>Posición</th>
+                            <th style="width: 90px; white-space: nowrap" class="text-center">Posición</th>
                             <th>Nombre</th>
-                            <th>Activo</th>
-                            <th>Opciones</th>
+                            <th style="width: 130px; white-space: nowrap" class="text-center">Activo</th>
+                            <th style="width: 190px; white-space: nowrap">Opciones</th>
                         </tr>
                         </thead>
                         <tbody id="tablecontents">
                         @foreach($categorias as $dato)
                             <tr class="row1" data-id="{{ $dato->id }}">
 
-                                <td>{{ $dato->posicion }}</td>
+                                <td class="text-center">{{ $dato->posicion }}</td>
                                 <td>{{ $dato->nombre }}</td>
 
-                                <td>
+                                <td class="text-center">
                                     @if($dato->activo == 0)
                                         <span class="badge bg-danger">Desactivado</span>
                                     @else
@@ -28,7 +28,7 @@
                                     @endif
                                 </td>
 
-                                <td>
+                                <td style="white-space: nowrap">
                                     <button type="button" class="btn btn-primary btn-xs" onclick="informacion({{ $dato->id }})">
                                         <i class="fas fa-eye" title="Editar"></i>&nbsp; Editar
                                     </button>
