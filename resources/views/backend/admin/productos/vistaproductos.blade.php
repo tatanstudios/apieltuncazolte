@@ -248,6 +248,12 @@
 
     <script>
 
+        // Al volver con "Atrás" desde Modificadores el navegador puede mostrar la página desde caché;
+        // recargamos la tabla para que el contador de modificadores esté actualizado.
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) { recargar(); }
+        });
+
         function recargar(){
             var id = {{ $id }};
             var ruta = "{{ URL::to('/admin/productos/tablas') }}/"+id;

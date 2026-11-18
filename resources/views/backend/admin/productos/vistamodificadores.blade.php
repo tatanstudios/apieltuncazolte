@@ -56,7 +56,22 @@
 <section class="content-header">
     <div class="container-fluid">
         <div class="row align-items-center">
-            <a class="btn btn-info btn-sm" href="{{ url('/admin/productos/'.$producto->id_categorias) }}">Atrás</a>
+            <a class="btn btn-info btn-sm" href="{{ url('/admin/productos/'.$producto->id_categorias) }}" onclick="return volverAtras(this.href)">Atrás</a>
+            <script>
+                // Si venimos de la lista de productos, regresar en el historial (no apilar una entrada nueva).
+                // Si se entró directo (sin historial), reemplazar la entrada actual para no crear bucles.
+                function volverAtras(destino) {
+                    try {
+                        var ref = document.referrer ? new URL(document.referrer) : null;
+                        if (ref && ref.origin === location.origin && ref.pathname === new URL(destino).pathname && history.length > 1) {
+                            history.back();
+                            return false;
+                        }
+                    } catch (e) {}
+                    location.replace(destino);
+                    return false;
+                }
+            </script>
             <h1 style="margin-left: 15px">Modificadores</h1>
         </div>
     </div>
