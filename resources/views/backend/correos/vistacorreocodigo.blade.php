@@ -83,7 +83,9 @@
                                 <p style="margin: 0;">Cafe, Helados Y Pupuseria El Tuncazo</p>
                             </div>
                             <div style="margin-top: 15px">
-                                <img src="http://tuncazo.xyz/storage/imagenes/logo.png" height="125px" width="125px">
+                                {{-- el logo va adjunto dentro del correo (no depende de la URL del servidor ni de /storage) --}}
+                                <img src="{{ isset($message) ? $message->embed(public_path('images/logo.png')) : asset('images/logo.png') }}"
+                                     alt="El Tuncazo" height="125" width="125" style="display: block; border: 0;">
                             </div>
                         </div>
                     </td>
