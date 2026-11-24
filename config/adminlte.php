@@ -348,6 +348,12 @@ return [
                     'icon' => 'far fa-fw fa-circle',
                 ],
                 [
+                    'text' => 'Pedidos y WhatsApp',
+                    'route' => 'index.configuracion',
+                    'target' => 'frameprincipal',
+                    'icon' => 'fab fa-fw fa-whatsapp',
+                ],
+                [
                     'text' => 'Editar Perfil',
                     'route' => 'admin.perfil',
                     'target' => 'frameprincipal',
