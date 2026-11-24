@@ -11,6 +11,9 @@
                                 <th>Cerrar App</th>
                                 <th>Mensaje Cerrado</th>
                                 <th>Activo Slider</th>
+                                <th>Envío de Pedidos</th>
+                                <th>WhatsApp</th>
+                                <th>Mínimo de Consumo</th>
                                 <th>Opciones</th>
                             </tr>
                             </thead>
@@ -34,6 +37,18 @@
                                             <span class="badge bg-success">Sí</span>
                                         @endif
                                     </td>
+
+                                    <td>
+                                        @if($dato->modo_pedido == 2)
+                                            <span class="badge bg-success">Solo WhatsApp</span>
+                                        @elseif($dato->modo_pedido == 3)
+                                            <span class="badge bg-info">Orden normal y WhatsApp</span>
+                                        @else
+                                            <span class="badge bg-primary">Solo orden normal</span>
+                                        @endif
+                                    </td>
+                                    <td>+{{ $dato->whatsapp_numero }}</td>
+                                    <td>${{ number_format((float) $dato->minimo_consumo, 2) }}</td>
 
                                     <td>
                                         <button type="button" class="btn btn-primary btn-xs" onclick="verInformacion({{ $dato->id }})">

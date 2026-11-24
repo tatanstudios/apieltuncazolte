@@ -62,6 +62,7 @@ Route::middleware(['auth:sanctum', ClienteDelToken::class])->group(function () {
     Route::post('cliente/carrito/cambiar/cantidad', [ApiCarritoController::class, 'editarCantidadProducto']);
     Route::post('cliente/carrito/ver/proceso-orden', [ApiCarritoController::class, 'verOrdenAProcesarCliente']);
     Route::post('cliente/proceso/orden/estado-1', [ApiCarritoController::class, 'procesarOrdenEstado1']);
+    Route::post('cliente/proceso/orden/whatsapp', [ApiCarritoController::class, 'procesarOrdenWhatsapp']);
 
     // --- ORDENES ENVIADAS ---
     Route::post('cliente/ver/ordenes-activas',  [ApiOrdenesController::class, 'ordenesActivas']);

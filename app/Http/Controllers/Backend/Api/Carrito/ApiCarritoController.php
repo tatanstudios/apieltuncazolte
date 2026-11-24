@@ -22,6 +22,139 @@ use Illuminate\Support\Facades\Validator;
 
 class ApiCarritoController extends Controller
 {
+    const MODO_NORMAL = 1;
+    const MODO_WHATSAPP = 2;
+    const MODO_AMBOS = 3;
+
+    /**
+     * Configuración de pedidos guardada en el panel (Configuración).
+     * Valores por defecto si la migración aún no corre.
+     */
+    private function configPedido(): array
+    {
+        $info = InformacionAdmin::first();
+
+        $modo = (int) ($info->modo_pedido ?? self::MODO_NORMAL);
+        if (!in_array($modo, [self::MODO_NORMAL, self::MODO_WHATSAPP, self::MODO_AMBOS], true)) {
+            $modo = self::MODO_NORMAL;
+        }
+
+        return [
+            'modo' => $modo,
+            'whatsapp' => preg_replace('/\D/', '', (string) ($info->whatsapp_numero ?? '50375825072')),
+            'minimo' => (float) ($info->minimo_consumo ?? 6),
+        ];
+    }
+
+    private function permiteNormal(int $modo): bool
+    {
+        return $modo === self::MODO_NORMAL || $modo === self::MODO_AMBOS;
+    }
+
+    private function permiteWhatsapp(int $modo): bool
+    {
+        return $modo === self::MODO_WHATSAPP || $modo === self::MODO_AMBOS;
+    }
+
+    /**
+     * Validaciones comunes antes de enviar un pedido (orden normal o WhatsApp).
+     * Devuelve ['error' => respuesta] o ['cart', 'producto', 'total', 'direccion'].
+     */
+    private function validarPedido($clienteId, float $minimoConsumo): array
+    {
+        $infoDireccion = DireccionCliente::where('id_cliente', $clienteId)
+            ->where('seleccionado', 1)
+            ->first();
+
+        if (!$infoDireccion) {
+            return ['error' => ['success' => 4, 'mensaje' => 'Se necesita una dirección de entrega']];
+        }
+
+        // local cerrado (panel, día cerrado o fuera de horario): mismo cálculo que el aviso del menú
+        $estado = EstadoLocal::ahora();
+        if (!$estado['abierto']) {
+            $mensaje = $estado['texto'];
+            if (!empty($estado['motivo'])) {
+                $mensaje .= "\n" . $estado['motivo'];
+            }
+            // 1 = cerrado por horario, 2 = cerrado desde el panel (la app muestra titulo y mensaje)
+            return ['error' => [
+                'success' => !empty($estado['motivo']) ? 2 : 1,
+                'titulo' => 'Local cerrado',
+                'mensaje' => $mensaje,
+            ]];
+        }
+
+        $cart = CarritoTemporal::where('id_clientes', $clienteId)->first();
+        if (!$cart) {
+            return ['error' => ['success' => 4, 'mensaje' => 'No hay productos']];
+        }
+
+        // listado de productos del carrito (precio con opciones)
+        $producto = $this->filasCarrito($cart->id);
+        if (count($producto) === 0) {
+            return ['error' => ['success' => 4, 'mensaje' => 'No hay productos']];
+        }
+
+        $total = 0;
+        foreach ($producto as $p) {
+            if ($p->activo == 0) {
+                return ['error' => ['success' => 4, 'mensaje' => "«{$p->nombre}» no está disponible, quítalo del carrito"]];
+            }
+            if (!$p->modificadoresOk) {
+                return ['error' => ['success' => 4, 'mensaje' => "Revisa las opciones de «{$p->nombre}»: {$p->modificadoresMensaje}"]];
+            }
+            $total += $p->cantidad * $p->precioUnidad;
+        }
+
+        if ($total < $minimoConsumo) {
+            // no puede ordenar
+            return ['error' => [
+                'success' => 3,
+                'mensaje' => "El mínimo de consumo es: $" . number_format($minimoConsumo, 2, '.', ','),
+            ]];
+        }
+
+        return ['cart' => $cart, 'producto' => $producto, 'total' => $total, 'direccion' => $infoDireccion];
+    }
+
+    /** Texto del pedido que se envía por WhatsApp. */
+    private function textoWhatsapp($producto, float $total, $direccion, ?string $nota): string
+    {
+        $fecha = Carbon::now('America/El_Salvador')->format('d/m/Y h:i A');
+
+        $t = "*NUEVO PEDIDO - El Tuncazo*\n";
+        $t .= "Fecha: {$fecha}\n\n";
+        $t .= "*Productos:*\n";
+
+        foreach ($producto as $p) {
+            $totalFila = number_format($p->cantidad * $p->precioUnidad, 2, '.', ',');
+            $t .= "• {$p->cantidad}x {$p->nombre} - \${$totalFila}\n";
+            foreach ((array) $p->opciones as $opcion) {
+                $t .= "   - {$opcion}\n";
+            }
+            if (!empty($p->nota)) {
+                $t .= "   Nota: {$p->nota}\n";
+            }
+        }
+
+        $t .= "\n*Total: $" . number_format($total, 2, '.', ',') . "*\n\n";
+
+        $t .= "*Datos de entrega:*\n";
+        $t .= "Nombre: {$direccion->nombre}\n";
+        $t .= "Teléfono: {$direccion->telefono}\n";
+        $t .= "Dirección: {$direccion->direccion}\n";
+        if (!empty($direccion->punto_referencia)) {
+            $t .= "Referencia: {$direccion->punto_referencia}\n";
+        }
+
+        $nota = trim((string) $nota);
+        if ($nota !== '') {
+            $t .= "\n*Nota de la orden:* {$nota}\n";
+        }
+
+        return $t;
+    }
     /**
      * Filas del carrito con el precio por unidad ya calculado (producto + opciones elegidas)
      * y la validación de las opciones contra las reglas actuales del producto.
@@ -320,10 +453,11 @@ class ApiCarritoController extends Controller
                     ];
                 }
 
-                $minimoConsumo = 6; // $6.00 DOLARES ES EL MINIMO DE CONSUMO
+                $config = $this->configPedido();
+                $minimoConsumo = $config['minimo']; // mínimo configurado en el panel
                 $minimo = 0; // aqui no puede ordenar
 
-                $msjMinimoConsumo = "El mínimo de consumo es: $".number_format((float)$minimoConsumo, 2, '.', ',');;
+                $msjMinimoConsumo = "El mínimo de consumo es: $".number_format((float)$minimoConsumo, 2, '.', ',');
 
                 $estado = EstadoLocal::ahora();
 
@@ -350,6 +484,9 @@ class ApiCarritoController extends Controller
                     'estado_detalle' => $estado['motivo'] ?? 'Podrás enviar tu orden cuando el local abra.',
                     'faltante' => number_format(max(0, $minimoConsumo - $subtotal), 2, '.', ','),
                     'productos' => $resumen,
+                    // 1 = solo orden normal, 2 = solo WhatsApp, 3 = ambas
+                    'modo_pedido' => $config['modo'],
+                    'whatsapp' => $config['whatsapp'],
                 ];
 
             }else{
@@ -373,126 +510,93 @@ class ApiCarritoController extends Controller
 
         if($validarDatos->fails()){return ['success' => 0]; }
 
+        $config = $this->configPedido();
+
+        // el panel solo permite pedidos por WhatsApp
+        if (!$this->permiteNormal($config['modo'])) {
+            return [
+                'success' => 4,
+                'titulo' => 'Pedidos por WhatsApp',
+                'mensaje' => 'Por el momento los pedidos se envían solo por WhatsApp.',
+            ];
+        }
+
+        //**** VALIDACIONES (dirección, local abierto, productos, mínimo de consumo)
+        $pedido = $this->validarPedido($request->clienteid, $config['minimo']);
+        if (isset($pedido['error'])) {
+            return $pedido['error'];
+        }
+
+        $cart = $pedido['cart'];
+        $producto = $pedido['producto'];
+        $total = $pedido['total'];
+        $infoDireccion = $pedido['direccion'];
 
         DB::beginTransaction();
 
         try {
 
-            // DIRECCION DEL CLIENTE
-            $infoDireccion = DireccionCliente::where('id_cliente', $request->clienteid)
-                ->where('seleccionado', 1)
-                ->first();
+            $fechahoy = Carbon::now('America/El_Salvador');
 
-            //**** VALIDACIONES
+            $idOrden = DB::table('ordenes')->insertGetId(
+                [ 'id_clientes' => $request->clienteid,
+                    'nota' => $request->nota,
 
-            // local cerrado (panel, día cerrado o fuera de horario): mismo cálculo que el aviso del menú
-            $estado = EstadoLocal::ahora();
-            if (!$estado['abierto']) {
-                $mensaje = $estado['texto'];
-                if (!empty($estado['motivo'])) {
-                    $mensaje .= "\n" . $estado['motivo'];
-                }
-                // 1 = cerrado por horario, 2 = cerrado desde el panel (la app muestra titulo y mensaje)
-                return [
-                    'success' => !empty($estado['motivo']) ? 2 : 1,
-                    'titulo' => 'Local cerrado',
-                    'mensaje' => $mensaje,
-                ];
-            }
+                    'precio_consumido' => $total,
+                    'fecha_orden' => $fechahoy,
 
-            // VERIFICAR SI TENGO CARRITO DE COMPRAS
-            if($cart = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
+                    'estado_iniciada' => 0, // el propietario inicia la orden
+                    'fecha_iniciada' => null,
 
-                // listado de productos del carrito (precio con opciones)
-                $producto = $this->filasCarrito($cart->id);
+                    'estado_cancelada' => 0, // el motorista inicia el envio
+                    'fecha_cancelada' => null,
+                    'mensaje_cancelada' => null,
+                    'cancelada_por' => 0,
+                    'visible' => 1,
+                ]
+            );
 
-                $total = 0;
+            // guadar todos los productos de esa orden
+            // el precio guardado es por unidad e incluye las opciones; las opciones se copian
+            // para que la orden no cambie si luego se editan los modificadores del producto
+            foreach($producto as $p){
 
-                foreach($producto as $p){
-                    if ($p->activo == 0) {
-                        return ['success' => 4, 'mensaje' => "«{$p->nombre}» no está disponible, quítalo del carrito"];
-                    }
-                    if (!$p->modificadoresOk) {
-                        return ['success' => 4, 'mensaje' => "Revisa las opciones de «{$p->nombre}»: {$p->modificadoresMensaje}"];
-                    }
-                    $total += $p->cantidad * $p->precioUnidad;
-                }
+                $idDescripcion = OrdenesDescripcion::insertGetId([
+                    'id_ordenes' => $idOrden,
+                    'id_producto' => $p->productoID,
+                    'cantidad' => $p->cantidad,
+                    'precio' => $p->precioUnidad,
+                    'nota' => $p->nota,
+                ]);
 
-                $minimoConsumo = 6; // $6.00 DOLARES ES EL MINIMO DE CONSUMO
-                $minimo = 0; // aqui no puede ordenar
-
-                $msjMinimoConsumo = "El mínimo de consumo es: $".number_format((float)$minimoConsumo, 2, '.', ',');;
-
-                if ($total < $minimoConsumo) {
-                    // no puede ordenar
-                    return ['success' => 3, 'mensaje' => $msjMinimoConsumo];
-                }
-
-                $fechahoy = Carbon::now('America/El_Salvador');
-
-                $idOrden = DB::table('ordenes')->insertGetId(
-                    [ 'id_clientes' => $request->clienteid,
-                        'nota' => $request->nota,
-
-                        'precio_consumido' => $total,
-                        'fecha_orden' => $fechahoy,
-
-                        'estado_iniciada' => 0, // el propietario inicia la orden
-                        'fecha_iniciada' => null,
-
-                        'estado_cancelada' => 0, // el motorista inicia el envio
-                        'fecha_cancelada' => null,
-                        'mensaje_cancelada' => null,
-                        'cancelada_por' => 0,
-                        'visible' => 1,
-                    ]
-                );
-
-                // guadar todos los productos de esa orden
-                // el precio guardado es por unidad e incluye las opciones; las opciones se copian
-                // para que la orden no cambie si luego se editan los modificadores del producto
-                foreach($producto as $p){
-
-                    $idDescripcion = OrdenesDescripcion::insertGetId([
-                        'id_ordenes' => $idOrden,
-                        'id_producto' => $p->productoID,
-                        'cantidad' => $p->cantidad,
-                        'precio' => $p->precioUnidad,
-                        'nota' => $p->nota,
+                foreach ($p->lineas as $l) {
+                    OrdenesDescripcionOpcion::create([
+                        'id_ordenes_descripcion' => $idDescripcion,
+                        'id_opcion' => $l['id_opcion'],
+                        'grupo' => $l['grupo'],
+                        'opcion' => $l['opcion'],
+                        'precio' => $l['precio'],
+                        'cantidad' => $l['cantidad'],
                     ]);
-
-                    foreach ($p->lineas as $l) {
-                        OrdenesDescripcionOpcion::create([
-                            'id_ordenes_descripcion' => $idDescripcion,
-                            'id_opcion' => $l['id_opcion'],
-                            'grupo' => $l['grupo'],
-                            'opcion' => $l['opcion'],
-                            'precio' => $l['precio'],
-                            'cantidad' => $l['cantidad'],
-                        ]);
-                    }
                 }
-
-
-                $nuevaDir = new OrdenesDirecciones();
-                $nuevaDir->id_ordenes = $idOrden;
-                $nuevaDir->nombre = $infoDireccion->nombre;
-                $nuevaDir->telefono = $infoDireccion->telefono;
-                $nuevaDir->direccion = $infoDireccion->direccion;
-                $nuevaDir->punto_referencia = $infoDireccion->punto_referencia;
-                $nuevaDir->version = $request->version;
-                $nuevaDir->save();
-
-                // BORRAR CARRITO TEMPORAL DEL USUARIO
-                CarritoExtra::where('id_carrito_temporal', $cart->id)->delete();
-                CarritoTemporal::where('id_clientes', $request->clienteid)->delete();
-
-                DB::commit();
-                return ['success' => 5];
-            }else{
-                // no tiene carrito de compras
-                return ['success' => 4, 'mensaje' => 'No hay productos'];
             }
+
+
+            $nuevaDir = new OrdenesDirecciones();
+            $nuevaDir->id_ordenes = $idOrden;
+            $nuevaDir->nombre = $infoDireccion->nombre;
+            $nuevaDir->telefono = $infoDireccion->telefono;
+            $nuevaDir->direccion = $infoDireccion->direccion;
+            $nuevaDir->punto_referencia = $infoDireccion->punto_referencia;
+            $nuevaDir->version = $request->version;
+            $nuevaDir->save();
+
+            // BORRAR CARRITO TEMPORAL DEL USUARIO
+            CarritoExtra::where('id_carrito_temporal', $cart->id)->delete();
+            CarritoTemporal::where('id_clientes', $request->clienteid)->delete();
+
+            DB::commit();
+            return ['success' => 5];
 
         } catch(\Throwable $e){
 
@@ -502,6 +606,44 @@ class ApiCarritoController extends Controller
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+
+    /**
+     * Pedido por WhatsApp: valida lo mismo que la orden normal (local abierto, productos,
+     * mínimo de consumo) y devuelve el enlace de WhatsApp con el pedido y la dirección.
+     * No guarda la orden en el panel ni borra el carrito: la app lo vacía cuando el
+     * cliente confirma que envió el mensaje.
+     */
+    public function procesarOrdenWhatsapp(Request $request){
+
+        $validarDatos = Validator::make($request->all(), ['clienteid' => 'required']);
+
+        if($validarDatos->fails()){return ['success' => 0]; }
+
+        $config = $this->configPedido();
+
+        if (!$this->permiteWhatsapp($config['modo']) || strlen($config['whatsapp']) < 8) {
+            return [
+                'success' => 4,
+                'titulo' => 'WhatsApp',
+                'mensaje' => 'Por el momento no se reciben pedidos por WhatsApp.',
+            ];
+        }
+
+        $pedido = $this->validarPedido($request->clienteid, $config['minimo']);
+        if (isset($pedido['error'])) {
+            return $pedido['error'];
+        }
+
+        $texto = $this->textoWhatsapp($pedido['producto'], $pedido['total'], $pedido['direccion'], $request->nota);
+
+        return [
+            'success' => 5,
+            'numero' => $config['whatsapp'],
+            'texto' => $texto,
+            'url' => 'https://wa.me/' . $config['whatsapp'] . '?text=' . rawurlencode($texto),
+        ];
     }
 
 }

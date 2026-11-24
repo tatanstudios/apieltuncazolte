@@ -115,12 +115,25 @@ class HorarioController extends Controller
 
         if ($validator->fails()){ return ['success' => 0];}
 
+        $modo = (int) $request->modo_pedido;
+        if (!in_array($modo, [1, 2, 3], true)) { return ['success' => 0]; }
+
+        // WhatsApp: solo dígitos (código de país + número)
+        $whatsapp = preg_replace('/\D/', '', (string) $request->whatsapp);
+        if ($modo !== 1 && strlen($whatsapp) < 8) { return ['success' => 3]; }
+
+        $minimo = (float) $request->minimo;
+        if ($minimo < 0) { return ['success' => 0]; }
+
         if(InformacionAdmin::where('id', $request->id)->first()){
 
             InformacionAdmin::where('id', $request->id)->update([
                 'mensaje_cerrado' => $request->mensaje,
                 'cerrado' => $request->cbcerrado,
-                'activo_slider' => $request->cbcarrusel
+                'activo_slider' => $request->cbcarrusel,
+                'modo_pedido' => $modo,
+                'whatsapp_numero' => $whatsapp !== '' ? $whatsapp : '50375825072',
+                'minimo_consumo' => $minimo,
             ]);
 
             return ['success' => 1];

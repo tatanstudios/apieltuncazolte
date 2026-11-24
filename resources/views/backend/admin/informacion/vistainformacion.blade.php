@@ -100,6 +100,31 @@
 
                             </div>
 
+                            <div class="col-md-6">
+
+                                <div class="form-group">
+                                    <label>Envío de Pedidos desde la App</label>
+                                    <select class="form-control" id="modo-pedido">
+                                        <option value="1">Solo orden normal (llega al panel)</option>
+                                        <option value="2">Solo por WhatsApp</option>
+                                        <option value="3">Ambas opciones (el cliente elige)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Número de WhatsApp que recibe los pedidos</label>
+                                    <input type="text" maxlength="20" class="form-control" id="whatsapp" placeholder="50375825072">
+                                    <small class="text-muted">Código de país + número, solo dígitos. Ej: 50375825072</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Mínimo de Consumo ($)</label>
+                                    <input type="number" min="0" step="0.01" class="form-control" id="minimo">
+                                    <small class="text-muted">Se valida para la orden normal y para WhatsApp.</small>
+                                </div>
+
+                            </div>
+
                         </div>
                     </div>
                 </form>
@@ -167,6 +192,10 @@
                             $("#toggle-carrusel").prop("checked", true);
                         }
 
+                        $('#modo-pedido').val(response.data.info.modo_pedido || 1);
+                        $('#whatsapp').val(response.data.info.whatsapp_numero);
+                        $('#minimo').val(response.data.info.minimo_consumo);
+
                     }else{
                         toastr.error('Error al Buscar');
                     }
@@ -198,6 +227,20 @@
                 return;
             }
 
+            var modoPedido = document.getElementById('modo-pedido').value;
+            var whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, '');
+            var minimo = document.getElementById('minimo').value;
+
+            if(modoPedido !== '1' && whatsapp.length < 8){
+                toastr.error('Número de WhatsApp es requerido (código de país + número)');
+                return;
+            }
+
+            if(minimo === '' || isNaN(minimo) || parseFloat(minimo) < 0){
+                toastr.error('Mínimo de consumo no válido');
+                return;
+            }
+
             openLoading();
 
             let formData = new FormData();
@@ -205,6 +248,9 @@
             formData.append('mensaje', mensaje);
             formData.append('cbcerrado', toggleCerrado);
             formData.append('cbcarrusel', toggleCarrusel);
+            formData.append('modo_pedido', modoPedido);
+            formData.append('whatsapp', whatsapp);
+            formData.append('minimo', minimo);
 
             axios.post('/admin/configuracion/editar', formData, {
             })
@@ -215,6 +261,8 @@
                         $('#modalEditar').modal('hide');
                         toastr.success('Información Actualizada');
                         recargar();
+                    } else if (response.data.success === 3) {
+                        toastr.error('Número de WhatsApp no válido');
                     } else {
                         toastr.error('Error al Editar');
                     }
