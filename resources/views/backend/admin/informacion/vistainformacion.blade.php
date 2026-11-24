@@ -48,7 +48,7 @@
 
 <!-- modal editar -->
 <div class="modal fade" id="modalEditar">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Editar Opciones</h4>
@@ -59,72 +59,40 @@
             <div class="modal-body">
                 <form id="formulario-editar">
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
+                        <input type="hidden" id="id-editar">
 
-                                <div class="form-group" style="margin-left:0px">
-                                    <label>Cerrado de Aplicación</label><br>
-                                    <label class="switch" style="margin-top:10px">
-                                        <input type="checkbox" id="toggle-cerrado">
-                                        <div class="slider round">
-                                            <span class="on">Activar</span>
-                                            <span class="off">Desactivar</span>
-                                        </div>
-                                    </label>
+                        <div class="form-group">
+                            <label>Envío de Pedidos desde la App</label>
+                            <select class="form-control" id="modo-pedido">
+                                <option value="1">Solo orden normal (llega al panel)</option>
+                                <option value="2">Solo por WhatsApp</option>
+                                <option value="3">Ambas opciones (el cliente elige)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Número de WhatsApp que recibe los pedidos</label>
+                            <input type="text" maxlength="20" class="form-control" id="whatsapp" placeholder="50375825072">
+                            <small class="text-muted">Código de país + número, solo dígitos. Ej: 50375825072</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mínimo de Consumo ($)</label>
+                            <input type="number" min="0" step="0.01" class="form-control" id="minimo">
+                            <small class="text-muted">Se valida para la orden normal y para WhatsApp.</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-group" style="margin-left:0px">
+                            <label>Habilitar Slider (carrusel de imágenes que se muestra al inicio)</label><br>
+                            <label class="switch" style="margin-top:10px">
+                                <input type="checkbox" id="toggle-carrusel">
+                                <div class="slider round">
+                                    <span class="on">Si</span>
+                                    <span class="off">No</span>
                                 </div>
-
-                                <div class="form-group">
-                                    <label>Mensaje de Cerrado</label>
-                                    <input type="text" maxlength="300" class="form-control" id="mensaje">
-                                    <input type="hidden" id="id-editar">
-                                </div>
-
-                                <hr>
-
-                                <div class="form-group">
-                                    <label>Esto es el Carrusel de Imagenes que se muestra al Inicio</label>
-                                </div>
-
-                                <div class="form-group" style="margin-left:0px">
-                                    <label>Habilitar Slider</label><br>
-                                    <label class="switch" style="margin-top:10px">
-                                        <input type="checkbox" id="toggle-carrusel">
-                                        <div class="slider round">
-                                            <span class="on">Si</span>
-                                            <span class="off">No</span>
-                                        </div>
-                                    </label>
-                                </div>
-
-
-
-                            </div>
-
-                            <div class="col-md-6">
-
-                                <div class="form-group">
-                                    <label>Envío de Pedidos desde la App</label>
-                                    <select class="form-control" id="modo-pedido">
-                                        <option value="1">Solo orden normal (llega al panel)</option>
-                                        <option value="2">Solo por WhatsApp</option>
-                                        <option value="3">Ambas opciones (el cliente elige)</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Número de WhatsApp que recibe los pedidos</label>
-                                    <input type="text" maxlength="20" class="form-control" id="whatsapp" placeholder="50375825072">
-                                    <small class="text-muted">Código de país + número, solo dígitos. Ej: 50375825072</small>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Mínimo de Consumo ($)</label>
-                                    <input type="number" min="0" step="0.01" class="form-control" id="minimo">
-                                    <small class="text-muted">Se valida para la orden normal y para WhatsApp.</small>
-                                </div>
-
-                            </div>
-
+                            </label>
                         </div>
                     </div>
                 </form>
@@ -178,14 +146,6 @@
 
                         $('#modalEditar').modal('show');
                         $('#id-editar').val(id);
-                        $('#mensaje').val(response.data.info.mensaje_cerrado);
-
-                        if(response.data.info.cerrado === 0){
-                            $("#toggle-cerrado").prop("checked", false);
-                        }else{
-                            $("#toggle-cerrado").prop("checked", true);
-                        }
-
                         if(response.data.info.activo_slider === 0){
                             $("#toggle-carrusel").prop("checked", false);
                         }else{
@@ -208,24 +168,8 @@
 
         function editar() {
             var id = document.getElementById('id-editar').value;
-            var mensaje = document.getElementById('mensaje').value;
-            var tp = document.getElementById('toggle-cerrado').checked;
             var cbslider = document.getElementById('toggle-carrusel').checked;
-
-
-            var toggleCerrado = tp ? 1 : 0;
             var toggleCarrusel = cbslider ? 1 : 0;
-
-
-            if(mensaje === ''){
-                toastr.error('Mensaje de Cerrado es Requerido');
-                return;
-            }
-
-            if(mensaje.length > 300){
-                toastr.error('Mensaje de Cerrado máximo 300 caracteres');
-                return;
-            }
 
             var modoPedido = document.getElementById('modo-pedido').value;
             var whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, '');
@@ -245,8 +189,6 @@
 
             let formData = new FormData();
             formData.append('id', id);
-            formData.append('mensaje', mensaje);
-            formData.append('cbcerrado', toggleCerrado);
             formData.append('cbcarrusel', toggleCarrusel);
             formData.append('modo_pedido', modoPedido);
             formData.append('whatsapp', whatsapp);

@@ -8,8 +8,6 @@
                         <table id="tabla" class="table table-bordered table-striped">
                             <thead>
                             <tr>
-                                <th>Cerrar App</th>
-                                <th>Mensaje Cerrado</th>
                                 <th>Activo Slider</th>
                                 <th>Envío de Pedidos</th>
                                 <th>WhatsApp</th>
@@ -21,15 +19,6 @@
 
                             @foreach($info as $dato)
                                 <tr>
-                                    <td>
-                                        @if($dato->cerrado == 0)
-                                            <span class="badge bg-danger">No</span>
-                                        @else
-                                            <span class="badge bg-success">Sí</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $dato->mensaje_cerrado }}</td>
-
                                     <td>
                                         @if($dato->activo_slider == 0)
                                             <span class="badge bg-danger">No</span>
