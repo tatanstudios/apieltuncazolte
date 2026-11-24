@@ -128,7 +128,8 @@ class HorarioController extends Controller
         if(InformacionAdmin::where('id', $request->id)->first()){
 
             InformacionAdmin::where('id', $request->id)->update([
-                // el cerrado de la app se edita en "Cerrar App"
+                'mensaje_cerrado' => $request->mensaje,
+                'cerrado' => $request->cbcerrado,
                 'activo_slider' => $request->cbcarrusel,
                 'modo_pedido' => $modo,
                 'whatsapp_numero' => $whatsapp !== '' ? $whatsapp : '50375825072',

@@ -342,13 +342,8 @@ return [
                     'icon' => 'far fa-fw fa-circle',
                 ],
                 [
-                    'text' => 'Cerrar App',
-                    'route' => 'index.cerrar.app',
-                    'target' => 'frameprincipal',
-                    'icon' => 'far fa-fw fa-circle',
-                ],
-                [
-                    'text' => 'Pedidos y WhatsApp',
+                    // cerrar app, pedidos por WhatsApp, mínimo de consumo y slider
+                    'text' => 'Opciones de la App',
                     'route' => 'index.configuracion',
                     'target' => 'frameprincipal',
                     'icon' => 'fab fa-fw fa-whatsapp',

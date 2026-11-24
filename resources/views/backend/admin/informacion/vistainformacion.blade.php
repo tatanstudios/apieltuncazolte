@@ -61,6 +61,24 @@
                     <div class="card-body">
                         <input type="hidden" id="id-editar">
 
+                        <div class="form-group" style="margin-left:0px">
+                            <label>Cerrado de Aplicación</label><br>
+                            <label class="switch" style="margin-top:10px">
+                                <input type="checkbox" id="toggle-cerrado">
+                                <div class="slider round">
+                                    <span class="on">Activar</span>
+                                    <span class="off">Desactivar</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mensaje de Cerrado</label>
+                            <input type="text" maxlength="300" class="form-control" id="mensaje">
+                        </div>
+
+                        <hr>
+
                         <div class="form-group">
                             <label>Envío de Pedidos desde la App</label>
                             <select class="form-control" id="modo-pedido">
@@ -146,6 +164,14 @@
 
                         $('#modalEditar').modal('show');
                         $('#id-editar').val(id);
+                        $('#mensaje').val(response.data.info.mensaje_cerrado);
+
+                        if(response.data.info.cerrado === 0){
+                            $("#toggle-cerrado").prop("checked", false);
+                        }else{
+                            $("#toggle-cerrado").prop("checked", true);
+                        }
+
                         if(response.data.info.activo_slider === 0){
                             $("#toggle-carrusel").prop("checked", false);
                         }else{
@@ -168,8 +194,20 @@
 
         function editar() {
             var id = document.getElementById('id-editar').value;
+            var mensaje = document.getElementById('mensaje').value;
+            var toggleCerrado = document.getElementById('toggle-cerrado').checked ? 1 : 0;
             var cbslider = document.getElementById('toggle-carrusel').checked;
             var toggleCarrusel = cbslider ? 1 : 0;
+
+            if(mensaje === ''){
+                toastr.error('Mensaje de Cerrado es Requerido');
+                return;
+            }
+
+            if(mensaje.length > 300){
+                toastr.error('Mensaje de Cerrado máximo 300 caracteres');
+                return;
+            }
 
             var modoPedido = document.getElementById('modo-pedido').value;
             var whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, '');
@@ -189,6 +227,8 @@
 
             let formData = new FormData();
             formData.append('id', id);
+            formData.append('mensaje', mensaje);
+            formData.append('cbcerrado', toggleCerrado);
             formData.append('cbcarrusel', toggleCarrusel);
             formData.append('modo_pedido', modoPedido);
             formData.append('whatsapp', whatsapp);
