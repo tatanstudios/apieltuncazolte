@@ -121,11 +121,8 @@ class ApiCarritoController extends Controller
     /** Texto del pedido que se envía por WhatsApp. */
     private function textoWhatsapp($producto, float $total, $direccion, ?string $nota): string
     {
-        $fecha = Carbon::now('America/El_Salvador')->format('d/m/Y h:i A');
-
-        $t = "*NUEVO PEDIDO - El Tuncazo*\n";
-        $t .= "Fecha: {$fecha}\n\n";
-        $t .= "*Productos:*\n";
+        // solo productos y dirección de envío
+        $t = "*Productos:*\n";
 
         foreach ($producto as $p) {
             $totalFila = number_format($p->cantidad * $p->precioUnidad, 2, '.', ',');
@@ -140,17 +137,10 @@ class ApiCarritoController extends Controller
 
         $t .= "\n*Total: $" . number_format($total, 2, '.', ',') . "*\n\n";
 
-        $t .= "*Datos de entrega:*\n";
-        $t .= "Nombre: {$direccion->nombre}\n";
-        $t .= "Teléfono: {$direccion->telefono}\n";
-        $t .= "Dirección: {$direccion->direccion}\n";
+        $t .= "*Dirección de envío:*\n";
+        $t .= "{$direccion->direccion}\n";
         if (!empty($direccion->punto_referencia)) {
             $t .= "Referencia: {$direccion->punto_referencia}\n";
-        }
-
-        $nota = trim((string) $nota);
-        if ($nota !== '') {
-            $t .= "\n*Nota de la orden:* {$nota}\n";
         }
 
         return $t;
