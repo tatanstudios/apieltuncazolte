@@ -43,6 +43,12 @@ class ApiZonasServiciosController extends Controller
 
         $estado = EstadoLocal::ahora();
 
+        // 1 = solo orden normal, 2 = solo WhatsApp, 3 = ambas (con 2 la app oculta "Órdenes")
+        $modoPedido = (int) (InformacionAdmin::value('modo_pedido') ?? 1);
+        if (!in_array($modoPedido, [1, 2, 3], true)) {
+            $modoPedido = 1;
+        }
+
         return [
             'success' => 1,
             'servicios' => $servicios,
@@ -50,6 +56,7 @@ class ApiZonasServiciosController extends Controller
             'estado_texto' => $estado['texto'],
             'estado_detalle' => $estado['detalle'],
             'cantidad_carrito' => $cantidadCarrito,
+            'modo_pedido' => $modoPedido,
         ];
     }
 
