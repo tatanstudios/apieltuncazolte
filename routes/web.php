@@ -13,6 +13,9 @@ use App\Http\Controllers\Backend\Admin\Eventos\EventosController;
 use App\Http\Controllers\Backend\Admin\Horario\HorarioController;
 use App\Http\Controllers\Backend\Admin\Ordenes\OrdenesController;
 
+// POLÍTICA DE PRIVACIDAD (pública, enlazada desde Google Play)
+Route::view('/politica-privacidad', 'frontend.politica.privacidad')->name('politica.privacidad');
+
 // INICIO
 Route::get('/', [LoginController::class,'index'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
