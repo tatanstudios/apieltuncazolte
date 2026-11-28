@@ -11,7 +11,6 @@
                                 <th>Cerrar App</th>
                                 <th>Mensaje Cerrado</th>
                                 <th>Activo Slider</th>
-                                <th>Envío de Pedidos</th>
                                 <th>WhatsApp</th>
                                 <th>Envío</th>
                                 <th>Opciones</th>
@@ -38,15 +37,6 @@
                                         @endif
                                     </td>
 
-                                    <td>
-                                        @if($dato->modo_pedido == 2)
-                                            <span class="badge bg-success">Solo WhatsApp</span>
-                                        @elseif($dato->modo_pedido == 3)
-                                            <span class="badge bg-info">Orden normal y WhatsApp</span>
-                                        @else
-                                            <span class="badge bg-primary">Solo orden normal</span>
-                                        @endif
-                                    </td>
                                     <td>+{{ $dato->whatsapp_numero }}</td>
                                     <td>
                                         @if((float) $dato->envio_costo > 0)

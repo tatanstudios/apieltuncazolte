@@ -80,15 +80,6 @@
                         <hr>
 
                         <div class="form-group">
-                            <label>Envío de Pedidos desde la App</label>
-                            <select class="form-control" id="modo-pedido">
-                                <option value="1">Solo orden normal (llega al panel)</option>
-                                <option value="2">Solo por WhatsApp</option>
-                                <option value="3">Ambas opciones (el cliente elige)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
                             <label>Número de WhatsApp que recibe los pedidos</label>
                             <input type="text" maxlength="20" class="form-control" id="whatsapp" placeholder="50375825072">
                             <small class="text-muted">Código de país + número, solo dígitos. Ej: 50375825072</small>
@@ -184,7 +175,6 @@
                             $("#toggle-carrusel").prop("checked", true);
                         }
 
-                        $('#modo-pedido').val(response.data.info.modo_pedido || 1);
                         $('#whatsapp').val(response.data.info.whatsapp_numero);
                         $('#envio-limite').val(response.data.info.envio_limite);
                         $('#envio-costo').val(response.data.info.envio_costo);
@@ -216,10 +206,9 @@
                 return;
             }
 
-            var modoPedido = document.getElementById('modo-pedido').value;
             var whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, '');
 
-            if(modoPedido !== '1' && whatsapp.length < 8){
+            if(whatsapp.length < 8){
                 toastr.error('Número de WhatsApp es requerido (código de país + número)');
                 return;
             }
@@ -244,7 +233,6 @@
             formData.append('mensaje', mensaje);
             formData.append('cbcerrado', toggleCerrado);
             formData.append('cbcarrusel', toggleCarrusel);
-            formData.append('modo_pedido', modoPedido);
             formData.append('whatsapp', whatsapp);
             formData.append('envio_limite', envioLimite);
             formData.append('envio_costo', envioCosto);

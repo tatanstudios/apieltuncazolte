@@ -115,12 +115,9 @@ class HorarioController extends Controller
 
         if ($validator->fails()){ return ['success' => 0];}
 
-        $modo = (int) $request->modo_pedido;
-        if (!in_array($modo, [1, 2, 3], true)) { return ['success' => 0]; }
-
-        // WhatsApp: solo dígitos (código de país + número)
+        // los pedidos se envían solo por WhatsApp: el número es obligatorio (código de país + número)
         $whatsapp = preg_replace('/\D/', '', (string) $request->whatsapp);
-        if ($modo !== 1 && strlen($whatsapp) < 8) { return ['success' => 3]; }
+        if (strlen($whatsapp) < 8) { return ['success' => 3]; }
 
         // costo de envío (pedidos por WhatsApp sin cuenta)
         $envioLimite = (float) $request->envio_limite;
@@ -133,7 +130,7 @@ class HorarioController extends Controller
                 'mensaje_cerrado' => $request->mensaje,
                 'cerrado' => $request->cbcerrado,
                 'activo_slider' => $request->cbcarrusel,
-                'modo_pedido' => $modo,
+                'modo_pedido' => 2, // solo WhatsApp
                 'whatsapp_numero' => $whatsapp !== '' ? $whatsapp : '50375825072',
                 'envio_limite' => $envioLimite,
                 'envio_costo' => $envioCosto,
