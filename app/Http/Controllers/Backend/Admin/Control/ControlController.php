@@ -36,7 +36,8 @@ class ControlController extends Controller implements HasMiddleware
             $ruta = 'no.permisos.index';
         }*/
 
-        $ruta = 'index.ordenes.pendientes';
+        // al iniciar sesión se abre el Menú (categorías y productos); las órdenes ya no se usan
+        $ruta = 'index.bloques';
 
         return view('backend.index', compact('user', 'ruta'));
     }

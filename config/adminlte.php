@@ -301,26 +301,12 @@ return [
     'menu' => [
         // Los enlaces se abren dentro del iframe "frameprincipal" de resources/views/backend/index.blade.php
 
+        // Órdenes ocultas: los pedidos llegan solo por WhatsApp, ya no quedan en el panel.
+        // (Ordenes Pendientes: index.ordenes.pendientes · Ordenes Iniciadas Hoy: index.ordenes.hoy ·
+        //  Todas las Ordenes: index.ordenes.todas)
+
         [
-            'text' => 'Ordenes Pendientes',
-            'route' => 'index.ordenes.pendientes',
-            'target' => 'frameprincipal',
-            'icon' => 'far fa-fw fa-circle',
-        ],
-        [
-            'text' => 'Ordenes Iniciadas Hoy',
-            'route' => 'index.ordenes.hoy',
-            'target' => 'frameprincipal',
-            'icon' => 'far fa-fw fa-circle',
-        ],
-        [
-            'text' => 'Todas las Ordenes',
-            'route' => 'index.ordenes.todas',
-            'target' => 'frameprincipal',
-            'icon' => 'far fa-fw fa-circle',
-        ],
-        [
-            'text' => 'Servicios',
+            'text' => 'Menu',
             'route' => 'index.bloques',
             'target' => 'frameprincipal',
             'icon' => 'far fa-fw fa-circle',
@@ -342,7 +328,7 @@ return [
                     'icon' => 'far fa-fw fa-circle',
                 ],
                 [
-                    // cerrar app, pedidos por WhatsApp, mínimo de consumo y slider
+                    // cerrar app, número de WhatsApp, costo de envío y slider
                     'text' => 'Opciones de la App',
                     'route' => 'index.configuracion',
                     'target' => 'frameprincipal',
