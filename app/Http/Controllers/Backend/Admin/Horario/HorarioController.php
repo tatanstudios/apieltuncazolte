@@ -122,9 +122,6 @@ class HorarioController extends Controller
         $whatsapp = preg_replace('/\D/', '', (string) $request->whatsapp);
         if ($modo !== 1 && strlen($whatsapp) < 8) { return ['success' => 3]; }
 
-        $minimo = (float) $request->minimo;
-        if ($minimo < 0) { return ['success' => 0]; }
-
         // costo de envío (pedidos por WhatsApp sin cuenta)
         $envioLimite = (float) $request->envio_limite;
         $envioCosto = (float) $request->envio_costo;
@@ -138,7 +135,6 @@ class HorarioController extends Controller
                 'activo_slider' => $request->cbcarrusel,
                 'modo_pedido' => $modo,
                 'whatsapp_numero' => $whatsapp !== '' ? $whatsapp : '50375825072',
-                'minimo_consumo' => $minimo,
                 'envio_limite' => $envioLimite,
                 'envio_costo' => $envioCosto,
             ]);

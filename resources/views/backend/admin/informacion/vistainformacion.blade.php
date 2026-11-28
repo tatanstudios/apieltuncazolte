@@ -95,12 +95,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Mínimo de Consumo ($)</label>
-                            <input type="number" min="0" step="0.01" class="form-control" id="minimo">
-                            <small class="text-muted">Solo para versiones anteriores de la app (con cuenta de cliente).</small>
-                        </div>
-
-                        <div class="form-group">
                             <label>Cobrar envío si el pedido es de hasta ($)</label>
                             <input type="number" min="0" step="0.01" class="form-control" id="envio-limite">
                             <small class="text-muted">Ej. 6.00: pedidos de $6.00 o menos pagan envío; mayores van sin envío.</small>
@@ -192,7 +186,6 @@
 
                         $('#modo-pedido').val(response.data.info.modo_pedido || 1);
                         $('#whatsapp').val(response.data.info.whatsapp_numero);
-                        $('#minimo').val(response.data.info.minimo_consumo);
                         $('#envio-limite').val(response.data.info.envio_limite);
                         $('#envio-costo').val(response.data.info.envio_costo);
 
@@ -225,15 +218,9 @@
 
             var modoPedido = document.getElementById('modo-pedido').value;
             var whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, '');
-            var minimo = document.getElementById('minimo').value;
 
             if(modoPedido !== '1' && whatsapp.length < 8){
                 toastr.error('Número de WhatsApp es requerido (código de país + número)');
-                return;
-            }
-
-            if(minimo === '' || isNaN(minimo) || parseFloat(minimo) < 0){
-                toastr.error('Mínimo de consumo no válido');
                 return;
             }
 
@@ -259,7 +246,6 @@
             formData.append('cbcarrusel', toggleCarrusel);
             formData.append('modo_pedido', modoPedido);
             formData.append('whatsapp', whatsapp);
-            formData.append('minimo', minimo);
             formData.append('envio_limite', envioLimite);
             formData.append('envio_costo', envioCosto);
 

@@ -13,7 +13,6 @@
                                 <th>Activo Slider</th>
                                 <th>Envío de Pedidos</th>
                                 <th>WhatsApp</th>
-                                <th>Mínimo de Consumo</th>
                                 <th>Envío</th>
                                 <th>Opciones</th>
                             </tr>
@@ -49,7 +48,6 @@
                                         @endif
                                     </td>
                                     <td>+{{ $dato->whatsapp_numero }}</td>
-                                    <td>${{ number_format((float) $dato->minimo_consumo, 2) }}</td>
                                     <td>
                                         @if((float) $dato->envio_costo > 0)
                                             ${{ number_format((float) $dato->envio_costo, 2) }} hasta ${{ number_format((float) $dato->envio_limite, 2) }}
