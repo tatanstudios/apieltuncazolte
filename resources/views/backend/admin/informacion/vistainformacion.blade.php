@@ -95,9 +95,9 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Cobrar envío si el pedido es de hasta ($)</label>
+                            <label>Envío gratis desde ($)</label>
                             <input type="number" min="0" step="0.01" class="form-control" id="envio-limite">
-                            <small class="text-muted">Ej. 6.00: pedidos de $6.00 o menos pagan envío; mayores van sin envío.</small>
+                            <small class="text-muted">Ej. 6.00: pedidos de $6.00 o más van sin envío; menores pagan el costo de envío.</small>
                         </div>
 
                         <div class="form-group">

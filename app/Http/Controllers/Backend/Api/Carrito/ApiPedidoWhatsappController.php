@@ -36,13 +36,13 @@ class ApiPedidoWhatsappController extends Controller
         ];
     }
 
-    /** Envío: se cobra si el subtotal es igual o menor al límite del panel. */
+    /** Envío: gratis si el subtotal es igual o mayor al monto del panel; si es menor, se cobra. */
     private function costoEnvio(float $subtotal, array $config): float
     {
         if ($subtotal <= 0 || $config['envio_costo'] <= 0) {
             return 0;
         }
-        return $subtotal <= $config['envio_limite'] ? $config['envio_costo'] : 0;
+        return $subtotal < $config['envio_limite'] ? $config['envio_costo'] : 0;
     }
 
     private function dinero(float $monto): string
@@ -150,9 +150,9 @@ class ApiPedidoWhatsappController extends Controller
             'subtotal' => $this->dinero($subtotal),
             'envio' => $this->dinero($envio),
             'total' => $this->dinero($subtotal + $envio),
-            // texto para explicar el envío, ej. "Envío gratis en pedidos mayores a $6.00"
+            // texto para explicar el envío, ej. "Envío gratis en pedidos de $6.00 o más"
             'envio_texto' => $config['envio_costo'] > 0
-                ? 'Envío gratis en pedidos mayores a $' . $this->dinero($config['envio_limite'])
+                ? 'Envío gratis en pedidos de $' . $this->dinero($config['envio_limite']) . ' o más'
                 : null,
         ];
     }

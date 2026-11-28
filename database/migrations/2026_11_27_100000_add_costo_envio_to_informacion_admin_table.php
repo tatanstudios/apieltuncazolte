@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Costo de envío de los pedidos por WhatsApp (app sin cuenta de cliente):
- *   envio_limite: si el subtotal es igual o menor a este monto se cobra el envío
+ *   envio_limite: desde este monto (igual o mayor) el envío es gratis; si es menor se cobra
  *   envio_costo:  lo que se suma al pedido en ese caso (0 = envío gratis siempre)
  */
 return new class extends Migration

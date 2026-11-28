@@ -50,7 +50,7 @@
                                     <td>+{{ $dato->whatsapp_numero }}</td>
                                     <td>
                                         @if((float) $dato->envio_costo > 0)
-                                            ${{ number_format((float) $dato->envio_costo, 2) }} hasta ${{ number_format((float) $dato->envio_limite, 2) }}
+                                            ${{ number_format((float) $dato->envio_costo, 2) }} · gratis desde ${{ number_format((float) $dato->envio_limite, 2) }}
                                         @else
                                             Gratis
                                         @endif
