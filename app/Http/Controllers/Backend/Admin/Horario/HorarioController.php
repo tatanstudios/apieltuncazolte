@@ -125,6 +125,11 @@ class HorarioController extends Controller
         $minimo = (float) $request->minimo;
         if ($minimo < 0) { return ['success' => 0]; }
 
+        // costo de envío (pedidos por WhatsApp sin cuenta)
+        $envioLimite = (float) $request->envio_limite;
+        $envioCosto = (float) $request->envio_costo;
+        if ($envioLimite < 0 || $envioCosto < 0) { return ['success' => 0]; }
+
         if(InformacionAdmin::where('id', $request->id)->first()){
 
             InformacionAdmin::where('id', $request->id)->update([
@@ -134,6 +139,8 @@ class HorarioController extends Controller
                 'modo_pedido' => $modo,
                 'whatsapp_numero' => $whatsapp !== '' ? $whatsapp : '50375825072',
                 'minimo_consumo' => $minimo,
+                'envio_limite' => $envioLimite,
+                'envio_costo' => $envioCosto,
             ]);
 
             return ['success' => 1];

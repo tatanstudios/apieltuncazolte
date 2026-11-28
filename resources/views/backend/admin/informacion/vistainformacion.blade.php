@@ -97,7 +97,19 @@
                         <div class="form-group">
                             <label>Mínimo de Consumo ($)</label>
                             <input type="number" min="0" step="0.01" class="form-control" id="minimo">
-                            <small class="text-muted">Se valida para la orden normal y para WhatsApp.</small>
+                            <small class="text-muted">Solo para versiones anteriores de la app (con cuenta de cliente).</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Cobrar envío si el pedido es de hasta ($)</label>
+                            <input type="number" min="0" step="0.01" class="form-control" id="envio-limite">
+                            <small class="text-muted">Ej. 6.00: pedidos de $6.00 o menos pagan envío; mayores van sin envío.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Costo de envío ($)</label>
+                            <input type="number" min="0" step="0.01" class="form-control" id="envio-costo">
+                            <small class="text-muted">0 = envío gratis siempre.</small>
                         </div>
 
                         <hr>
@@ -181,6 +193,8 @@
                         $('#modo-pedido').val(response.data.info.modo_pedido || 1);
                         $('#whatsapp').val(response.data.info.whatsapp_numero);
                         $('#minimo').val(response.data.info.minimo_consumo);
+                        $('#envio-limite').val(response.data.info.envio_limite);
+                        $('#envio-costo').val(response.data.info.envio_costo);
 
                     }else{
                         toastr.error('Error al Buscar');
@@ -223,6 +237,19 @@
                 return;
             }
 
+            var envioLimite = document.getElementById('envio-limite').value;
+            var envioCosto = document.getElementById('envio-costo').value;
+
+            if(envioLimite === '' || isNaN(envioLimite) || parseFloat(envioLimite) < 0){
+                toastr.error('Monto para cobrar envío no válido');
+                return;
+            }
+
+            if(envioCosto === '' || isNaN(envioCosto) || parseFloat(envioCosto) < 0){
+                toastr.error('Costo de envío no válido');
+                return;
+            }
+
             openLoading();
 
             let formData = new FormData();
@@ -233,6 +260,8 @@
             formData.append('modo_pedido', modoPedido);
             formData.append('whatsapp', whatsapp);
             formData.append('minimo', minimo);
+            formData.append('envio_limite', envioLimite);
+            formData.append('envio_costo', envioCosto);
 
             axios.post('/admin/configuracion/editar', formData, {
             })

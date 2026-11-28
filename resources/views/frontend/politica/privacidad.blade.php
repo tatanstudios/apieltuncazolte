@@ -1,7 +1,7 @@
 @php
     $app = config('app.name', 'El Tuncazo');
     $correo = config('mail.from.address');
-    $actualizado = '26 de noviembre de 2026';
+    $actualizado = '27 de noviembre de 2026';
 @endphp
 <!DOCTYPE html>
 <html lang="es">
@@ -37,49 +37,51 @@
 <main>
     <h2>1. Quiénes somos</h2>
     <p>Esta política explica cómo la aplicación móvil <strong>{{ $app }}</strong> (“la app”), usada para ver el menú
-        y hacer pedidos de comida a domicilio, recopila, usa y protege la información de sus usuarios.
-        Al registrarte y usar la app aceptas lo descrito aquí.</p>
+        y enviar pedidos de comida a domicilio por WhatsApp, trata la información de sus usuarios.
+        La app <strong>no requiere crear una cuenta</strong> ni iniciar sesión.</p>
 
-    <h2>2. Información que recopilamos</h2>
+    <h2>2. Información que se usa</h2>
     <ul>
-        <li><strong>Datos de cuenta:</strong> número de teléfono (usado como usuario) y contraseña, que se guarda cifrada.</li>
-        <li><strong>Correo electrónico</strong> (opcional): solo si lo agregas, para recuperar tu contraseña.</li>
-        <li><strong>Direcciones de entrega:</strong> nombre, dirección, punto de referencia y teléfono de contacto que escribes para recibir tus pedidos.</li>
-        <li><strong>Pedidos:</strong> productos, cantidades, notas, totales y fecha de cada orden.</li>
-        <li><strong>Identificador de notificaciones:</strong> un identificador del dispositivo generado por OneSignal para enviarte avisos sobre el estado de tus pedidos.</li>
+        <li><strong>Carrito:</strong> los productos, cantidades, opciones y notas que eliges. Se guardan <strong>solo en tu teléfono</strong>.</li>
+        <li><strong>Direcciones de entrega:</strong> nombre de quien recibe, teléfono de contacto, dirección y punto de referencia.
+            Se guardan <strong>solo en tu teléfono</strong>; puedes borrarlas desde la app cuando quieras.</li>
+        <li><strong>Pedido por WhatsApp:</strong> al enviar tu pedido, la app abre WhatsApp con un mensaje que incluye tus productos,
+            el total, tu dirección de entrega y tu nota. Tú decides si envías ese mensaje.</li>
     </ul>
-    <p>La app <strong>no</strong> accede a tu ubicación GPS, contactos, fotos, cámara ni micrófono, y no procesa pagos con tarjeta dentro de la app.</p>
+    <p>Para mostrar los precios actualizados y armar el mensaje, la app envía tu carrito (y, al enviar el pedido, la dirección)
+        a nuestro servidor. El servidor <strong>no guarda</strong> esa información: solo la usa para responder en ese momento.</p>
+    <p>La app <strong>no</strong> accede a tu ubicación GPS, contactos, fotos, cámara ni micrófono, y no procesa pagos dentro de la app.</p>
 
     <h2>3. Para qué usamos tu información</h2>
     <ul>
-        <li>Crear y administrar tu cuenta e iniciar sesión.</li>
-        <li>Recibir, preparar y entregar tus pedidos en la dirección que elijas.</li>
-        <li>Contactarte sobre un pedido y enviarte notificaciones de su estado.</li>
-        <li>Recuperar el acceso a tu cuenta mediante un código enviado a tu correo.</li>
+        <li>Calcular el total de tu pedido y el costo de envío.</li>
+        <li>Preparar y entregar tu pedido en la dirección que indicas.</li>
+        <li>Contactarte por WhatsApp o teléfono sobre tu pedido.</li>
     </ul>
     <p>No vendemos ni alquilamos tu información personal, ni la usamos para publicidad.</p>
 
     <h2>4. Con quién la compartimos</h2>
     <ul>
         <li><strong>Personal del restaurante y repartidores</strong>, solo lo necesario para preparar y entregar tu pedido.</li>
-        <li><strong>OneSignal</strong>, proveedor del servicio de notificaciones push
-            (<a href="https://onesignal.com/privacy_policy" target="_blank" rel="noopener">política de privacidad de OneSignal</a>).</li>
+        <li><strong>WhatsApp</strong> (Meta), cuando eliges enviar tu pedido por ese medio
+            (<a href="https://www.whatsapp.com/legal/privacy-policy" target="_blank" rel="noopener">política de privacidad de WhatsApp</a>).</li>
         <li>Autoridades, únicamente cuando la ley lo exija.</li>
     </ul>
 
     <h2>5. Seguridad</h2>
-    <p>La información viaja cifrada entre la app y nuestro servidor mediante HTTPS, y las contraseñas se almacenan
-        con cifrado unidireccional (hash). Aun así, ningún sistema es 100 % seguro, por lo que te pedimos mantener tu contraseña en privado.</p>
+    <p>La información viaja cifrada entre la app y nuestro servidor mediante HTTPS. Los datos guardados en tu teléfono
+        permanecen en él y se borran si eliminas tus direcciones, vacías el carrito o desinstalas la app.</p>
 
     <h2>6. Conservación de los datos</h2>
-    <p>Conservamos tus datos mientras tu cuenta esté activa. Puedes borrar tus direcciones desde la app en cualquier momento.
-        Si eliminas tu cuenta, borraremos tus datos personales, salvo los registros de pedidos que debamos conservar por obligaciones legales o contables.</p>
+    <p>No guardamos tus datos en nuestro servidor. Los mensajes de pedido que envías por WhatsApp quedan en la conversación
+        con el restaurante, que los conserva solo el tiempo necesario para atender tu pedido.</p>
 
-    <h2 id="eliminar-cuenta">7. Tus derechos y eliminación de la cuenta</h2>
-    <p>Puedes consultar, corregir o actualizar tu correo y contraseña desde la sección de perfil de la app.
-        Para solicitar la <strong>eliminación de tu cuenta y de tus datos</strong>, escríbenos
-        @if($correo) a <a href="mailto:{{ $correo }}?subject=Eliminar%20mi%20cuenta%20{{ rawurlencode($app) }}">{{ $correo }}</a> @endif
-        desde el correo registrado o indicando el número de teléfono de tu cuenta. Atenderemos la solicitud en un plazo máximo de 30 días.</p>
+    <h2 id="eliminar-cuenta">7. Tus derechos y eliminación de datos</h2>
+    <p>Como no hay cuentas, no hay una cuenta que eliminar. Puedes borrar en cualquier momento tus direcciones y tu carrito
+        desde la app, o desinstalarla para borrar todo lo guardado en el teléfono. Si quieres que eliminemos los mensajes de pedido
+        que enviaste por WhatsApp, escríbenos
+        @if($correo) a <a href="mailto:{{ $correo }}?subject=Eliminar%20mis%20datos%20{{ rawurlencode($app) }}">{{ $correo }}</a> @endif
+        indicando el número desde el que hiciste el pedido. Atenderemos la solicitud en un plazo máximo de 30 días.</p>
 
     <h2>8. Menores de edad</h2>
     <p>La app no está dirigida a menores de 13 años y no recopilamos conscientemente información de ellos.

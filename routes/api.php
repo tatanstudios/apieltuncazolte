@@ -10,6 +10,7 @@ use App\Http\Controllers\Backend\Api\Servicios\ApiZonasServiciosController;
 use App\Http\Controllers\Backend\Api\Perfil\ApiPerfilController;
 use App\Http\Controllers\Backend\Api\Productos\ApiProductosController;
 use App\Http\Controllers\Backend\Api\Carrito\ApiCarritoController;
+use App\Http\Controllers\Backend\Api\Carrito\ApiPedidoWhatsappController;
 use App\Http\Controllers\Backend\Api\Ordenes\ApiOrdenesController;
 
 
@@ -34,6 +35,13 @@ Route::middleware('throttle:10,1')->group(function () {
 Route::post('cliente/lista/servicios-bloque', [ApiZonasServiciosController::class, 'listadoBloque']);
 Route::post('cliente/servicios/listado/menu', [ApiServiciosController::class, 'listadoMenuVertical']);
 Route::post('cliente/informacion/producto', [ApiProductosController::class, 'infoProductoIndividual']);
+
+// --- PEDIDO POR WHATSAPP SIN CUENTA (el carrito y la dirección viven en el teléfono) ---
+Route::middleware('throttle:60,1')->group(function () {
+    Route::post('publico/carrito/ver', [ApiPedidoWhatsappController::class, 'verCarrito']);
+    Route::post('publico/orden/ver', [ApiPedidoWhatsappController::class, 'verOrden']);
+    Route::post('publico/orden/whatsapp', [ApiPedidoWhatsappController::class, 'enviar']);
+});
 
 
 // ===== RUTAS CON SESIÓN =====
